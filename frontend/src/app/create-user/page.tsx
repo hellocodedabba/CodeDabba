@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/axios";
+import api from "@/lib/api";
 
 export default function CreateUserPage() {
     const [formData, setFormData] = useState({
@@ -25,8 +25,9 @@ export default function CreateUserPage() {
             await api.post("/users", formData);
             setMessage("User created successfully!");
             setFormData({ email: "", name: "", role: "STUDENT" });
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Something went wrong");
+        } catch (err: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setError((err as any).response?.data?.message || "Something went wrong");
         }
     };
 
