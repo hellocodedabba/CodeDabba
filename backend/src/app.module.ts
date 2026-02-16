@@ -16,11 +16,10 @@ import { Submission } from './entities/submission.entity';
 import { Enrollment } from './entities/enrollment.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { MentorApplication } from './entities/mentor-application.entity';
-import { File } from './entities/file.entity';
-import { CoursesController } from './modules/courses/courses.controller'; // Removed
-import { CoursesModule } from './modules/courses/courses.module';
+import { Otp } from './entities/otp.entity';
+import { CoursesController } from './modules/courses/courses.controller';
 import { MentorApplicationsModule } from './modules/mentor-applications/mentor-applications.module';
-import { FilesModule } from './modules/files/files.module';
+import { OtpModule } from './modules/otp/otp.module';
 
 @Module({
   imports: [
@@ -42,7 +41,7 @@ import { FilesModule } from './modules/files/files.module';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, File],
+          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, Otp],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {
             rejectUnauthorized: false,
@@ -54,8 +53,7 @@ import { FilesModule } from './modules/files/files.module';
     UsersModule,
     AuthModule,
     MentorApplicationsModule,
-    FilesModule,
-    CoursesModule,
+    OtpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

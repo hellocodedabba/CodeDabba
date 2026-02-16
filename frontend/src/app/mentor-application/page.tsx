@@ -22,6 +22,46 @@ export default function MentorApplicationPage() {
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+
+    const handleSendOtp = async () => {
+        if (!formData.email) {
+            setError("Please enter an email address first.");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        try {
+            await api.post('/otp/send', { email: formData.email, type: 'MENTOR_APPLICATION' });
+            setOtpSent(true);
+            alert("OTP sent to your email!");
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to send OTP.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otp) return;
+        setLoading(true);
+        setError("");
+        try {
+            const res = await api.post('/otp/verify', { email: formData.email, otp, type: 'MENTOR_APPLICATION' });
+            if (res.data.valid) {
+                setOtpVerified(true);
+                alert("Email verified successfully!");
+            } else {
+                setError("Invalid OTP");
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Verification failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -50,6 +90,12 @@ export default function MentorApplicationPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!otpVerified) {
+            setError("Please verify your email first.");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
@@ -132,9 +178,42 @@ export default function MentorApplicationPage() {
                                         value={formData.email}
                                         onChange={handleChange}
                                         required
+                                        disabled={otpVerified}
                                         className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
                                         placeholder="john@example.com"
                                     />
+                                    {!otpVerified && (
+                                        <div className="flex gap-2 mt-2">
+                                            {!otpSent ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSendOtp}
+                                                    disabled={loading || !formData.email}
+                                                    className="w-full py-2 bg-violet-600/50 text-white rounded-md text-sm hover:bg-violet-700 disabled:opacity-50"
+                                                >
+                                                    Verify Email to Apply
+                                                </button>
+                                            ) : (
+                                                <>
+                                                    <input
+                                                        placeholder="Enter OTP"
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value)}
+                                                        className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-2 text-white"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleVerifyOtp}
+                                                        disabled={loading || !otp}
+                                                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-50"
+                                                    >
+                                                        Verify
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                    {otpVerified && <p className="text-green-400 text-xs mt-1">✓ Verified</p>}
                                 </div>
                             </div>
 

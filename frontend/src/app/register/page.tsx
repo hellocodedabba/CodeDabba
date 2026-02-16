@@ -48,6 +48,46 @@ function RegisterForm() {
         role: "STUDENT", // Default to STUDENT
     });
     const [loading, setLoading] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+
+    const handleSendOtp = async () => {
+        if (!formData.email) {
+            alert("Please enter an email address first.");
+            return;
+        }
+        setLoading(true);
+        try {
+            await api.post('/otp/send', { email: formData.email, type: 'REGISTRATION' });
+            setOtpSent(true);
+            alert("OTP sent to your email!");
+        } catch (error: any) {
+            console.error(error);
+            alert("Failed to send OTP: " + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otp) return;
+        setLoading(true);
+        try {
+            const res = await api.post('/otp/verify', { email: formData.email, otp, type: 'REGISTRATION' });
+            if (res.data.valid) {
+                setOtpVerified(true);
+                alert("Email verified successfully!");
+            } else {
+                alert("Invalid OTP");
+            }
+        } catch (error: any) {
+            console.error(error);
+            alert("Verification failed: " + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Redirect if already logged in and fully setup
     useEffect(() => {
@@ -71,6 +111,12 @@ function RegisterForm() {
 
     const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (!otpVerified) {
+            alert("Please verify your email with OTP first!");
+            return;
+        }
+
         setLoading(true);
 
         if (formData.password !== formData.confirmPassword) {
@@ -163,8 +209,47 @@ function RegisterForm() {
                                 onFocus={() => setFocusedField("email")}
                                 onBlur={() => setFocusedField(null)}
                                 required
+                                disabled={otpVerified}
                                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
                             />
+
+                            {!otpVerified && (
+                                <div className="flex gap-2">
+                                    {!otpSent ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleSendOtp}
+                                            disabled={loading || !formData.email}
+                                            className="px-4 py-2 bg-violet-600 text-white rounded-md text-sm hover:bg-violet-700 disabled:opacity-50"
+                                        >
+                                            Send OTP
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <Input
+                                                placeholder="Enter OTP"
+                                                value={otp}
+                                                onChange={(e) => setOtp(e.target.value)}
+                                                className="bg-zinc-800 border-zinc-700 text-white w-32"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleVerifyOtp}
+                                                disabled={loading || !otp}
+                                                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-50"
+                                            >
+                                                Verify
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {otpVerified && (
+                                <div className="text-green-400 text-sm font-medium">
+                                    ✓ Email Verified
+                                </div>
+                            )}
                             {/* Role Selection Removed - Defaulting to Student internally */}
 
                             <div className="grid grid-cols-2 gap-4">
