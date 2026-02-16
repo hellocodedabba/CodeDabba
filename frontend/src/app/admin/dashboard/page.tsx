@@ -13,6 +13,8 @@ interface MentorApplication {
     email: string;
     mobileNumber: string;
     linkedinProfile: string;
+    portfolioUrl?: string;
+    resumeFileId?: string;
     expertise: string;
     bio: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -83,8 +85,8 @@ export default function AdminDashboard() {
                         <button
                             onClick={() => setActiveTab('overview')}
                             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview'
-                                    ? 'border-pink-500 text-pink-400'
-                                    : 'border-transparent text-zinc-400 hover:text-white'
+                                ? 'border-pink-500 text-pink-400'
+                                : 'border-transparent text-zinc-400 hover:text-white'
                                 }`}
                         >
                             Overview
@@ -92,8 +94,8 @@ export default function AdminDashboard() {
                         <button
                             onClick={() => setActiveTab('applications')}
                             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'applications'
-                                    ? 'border-pink-500 text-pink-400'
-                                    : 'border-transparent text-zinc-400 hover:text-white'
+                                ? 'border-pink-500 text-pink-400'
+                                : 'border-transparent text-zinc-400 hover:text-white'
                                 }`}
                         >
                             Mentor Applications
@@ -149,15 +151,23 @@ export default function AdminDashboard() {
                                                     <td className="px-6 py-4">
                                                         <div>{app.email}</div>
                                                         <div>{app.mobileNumber}</div>
-                                                        <a href={app.linkedinProfile} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-xs">LinkedIn</a>
+                                                        <div className="flex gap-2 text-xs mt-1">
+                                                            <a href={app.linkedinProfile} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">LinkedIn</a>
+                                                            {app.portfolioUrl && (
+                                                                <a href={app.portfolioUrl} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Portfolio</a>
+                                                            )}
+                                                            {app.resumeFileId && (
+                                                                <a href={`${api.defaults.baseURL}/files/${app.resumeFileId}`} target="_blank" rel="noreferrer" className="text-green-400 hover:underline">Resume</a>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 max-w-xs truncate" title={app.expertise}>
                                                         {app.expertise}
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${app.status === 'APPROVED' ? 'bg-green-500/10 text-green-400' :
-                                                                app.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
-                                                                    'bg-yellow-500/10 text-yellow-400'
+                                                            app.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
+                                                                'bg-yellow-500/10 text-yellow-400'
                                                             }`}>
                                                             {app.status}
                                                         </span>

@@ -23,6 +23,12 @@ export class MentorApplication {
     @Column()
     linkedinProfile: string;
 
+    @Column({ nullable: true })
+    portfolioUrl: string;
+
+    @Column({ nullable: true })
+    resumeFileId: string;
+
     @Column("text")
     expertise: string;
 

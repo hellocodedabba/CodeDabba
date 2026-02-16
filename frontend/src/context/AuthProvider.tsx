@@ -28,16 +28,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Check for existing session
-        const storedUser = localStorage.getItem('user');
-        const storedRole = localStorage.getItem('user_role');
-        const token = localStorage.getItem('access_token');
+        const initAuth = () => {
+            try {
+                // Check for existing session
+                const storedUser = localStorage.getItem('user');
+                const storedRole = localStorage.getItem('user_role');
+                const token = localStorage.getItem('access_token');
 
-        if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
-            setRole(storedRole);
-        }
-        setIsLoading(false);
+                if (token && storedUser) {
+                    setUser(JSON.parse(storedUser));
+                    setRole(storedRole);
+                }
+            } catch (error) {
+                console.error("Failed to restore validation session:", error);
+                // Clear potentially corrupted data
+                localStorage.clear();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initAuth();
     }, []);
 
     const login = (data: any) => {

@@ -16,8 +16,11 @@ import { Submission } from './entities/submission.entity';
 import { Enrollment } from './entities/enrollment.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { MentorApplication } from './entities/mentor-application.entity';
-import { CoursesController } from './modules/courses/courses.controller';
+import { File } from './entities/file.entity';
+import { CoursesController } from './modules/courses/courses.controller'; // Removed
+import { CoursesModule } from './modules/courses/courses.module';
 import { MentorApplicationsModule } from './modules/mentor-applications/mentor-applications.module';
+import { FilesModule } from './modules/files/files.module';
 
 @Module({
   imports: [
@@ -39,7 +42,7 @@ import { MentorApplicationsModule } from './modules/mentor-applications/mentor-a
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication],
+          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, File],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {
             rejectUnauthorized: false,
@@ -51,8 +54,10 @@ import { MentorApplicationsModule } from './modules/mentor-applications/mentor-a
     UsersModule,
     AuthModule,
     MentorApplicationsModule,
+    FilesModule,
+    CoursesModule,
   ],
-  controllers: [AppController, CoursesController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule { }

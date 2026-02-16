@@ -1,40 +1,49 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { CoursesService } from './courses.service';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '../../entities/user.entity';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('courses')
 export class CoursesController {
+    constructor(private readonly coursesService: CoursesService) { }
+
     @Get()
-    // @UseGuards(AuthGuard) // Optional: restrict to logged-in users? User asked for demo page after login, so yes.
-    findAll() {
-        // Demo Content
-        return [
-            {
-                id: '1',
-                title: 'Full Stack Web Development',
-                description: 'Learn to build modern web apps with React and Node.js',
-                instructor: 'Dr. Angela Yu',
-                progress: 0,
-                totalModules: 12,
-                imageUrl: 'https://images.unsplash.com/photo-1593720213428-28a5b9e94613?auto=format&fit=crop&w=800&q=80',
-            },
-            {
-                id: '2',
-                title: 'Machine Learning A-Z',
-                description: 'Master Machine Learning with Python and R',
-                instructor: 'Kirill Eremenko',
-                progress: 0,
-                totalModules: 10,
-                imageUrl: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=800&q=80',
-            },
-            {
-                id: '3',
-                title: 'The Complete Python Bootcamp',
-                description: 'Learn Python like a Professional! Start from the basics and go all the way to creating your own applications and games!',
-                instructor: 'Jose Portilla',
-                progress: 0,
-                totalModules: 15,
-                imageUrl: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=800&q=80',
-            }
-        ];
+    async findAll(@Query() query: any) {
+        return await this.coursesService.findAll(query);
+    }
+
+    @Get('my-courses')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR, Role.ADMIN)
+    async findMyCourses(@Request() req: any) {
+        return await this.coursesService.findMyCourses(req.user.id);
+    }
+
+    @Get(':id')
+    async findOne(@Param('id') id: string) {
+        return await this.coursesService.findOne(id);
+    }
+
+    @Post()
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR, Role.ADMIN)
+    async create(@Request() req: any, @Body() body: any) {
+        return await this.coursesService.createCourse(req.user, body);
+    }
+
+    @Post(':id/modules')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR, Role.ADMIN)
+    async createModule(@Param('id') id: string, @Body() body: { title: string; orderIndex: number }) {
+        return await this.coursesService.createModule(id, body.title, body.orderIndex);
+    }
+
+    @Post('modules/:moduleId/chapters')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR, Role.ADMIN)
+    async createChapter(@Param('moduleId') moduleId: string, @Body() body: { title: string; content: string; orderIndex: number }) {
+        return await this.coursesService.createChapter(moduleId, body.title, body.content, body.orderIndex);
     }
 }

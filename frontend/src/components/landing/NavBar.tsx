@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Code2, Github, Menu, X } from "lucide-react";
+import { Code2, Github, Menu, X, Loader2, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
 
 export function NavBar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { user } = useAuth();
+    const { user, isLoading, logout } = useAuth();
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
@@ -30,6 +30,11 @@ export function NavBar() {
                     <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
                         Pricing
                     </Link>
+                    {!user && (
+                        <Link href="/login" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                            Login
+                        </Link>
+                    )}
                 </div>
 
                 <div className="hidden md:flex items-center gap-4">
@@ -41,13 +46,26 @@ export function NavBar() {
                     >
                         <Github className="w-5 h-5" />
                     </a>
-                    {user ? (
-                        <Link
-                            href="/dashboard"
-                            className="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-500 transition-colors shadow-lg shadow-violet-500/20"
-                        >
-                            Dashboard
-                        </Link>
+                    {isLoading ? (
+                        <div className="w-24 flex justify-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+                        </div>
+                    ) : user ? (
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/dashboard"
+                                className="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-500 transition-colors shadow-lg shadow-violet-500/20"
+                            >
+                                Dashboard
+                            </Link>
+                            <button
+                                onClick={() => logout()}
+                                className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                title="Logout"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        </div>
                     ) : (
                         <div className="flex gap-2">
                             <Link
@@ -86,12 +104,33 @@ export function NavBar() {
                     </Link>
                     <hr className="border-white/5" />
                     <div className="flex flex-col gap-2">
-                        <Link href="/login" className="px-4 py-2 text-center text-sm font-medium text-zinc-300 bg-zinc-800 rounded-lg">
-                            Login
-                        </Link>
-                        <Link href="/register" className="px-4 py-2 text-center text-sm font-medium text-white bg-violet-600 rounded-lg">
-                            Start Learning
-                        </Link>
+                        {isLoading ? (
+                            <div className="w-full flex justify-center py-2">
+                                <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+                            </div>
+                        ) : user ? (
+                            <>
+                                <Link href="/dashboard" className="px-4 py-2 text-center text-sm font-medium text-white bg-violet-600 rounded-lg">
+                                    Dashboard
+                                </Link>
+                                <button
+                                    onClick={() => logout()}
+                                    className="px-4 py-2 text-center text-sm font-medium text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link href="/login" className="px-4 py-2 text-center text-sm font-medium text-zinc-300 bg-zinc-800 rounded-lg">
+                                    Login
+                                </Link>
+                                <Link href="/register" className="px-4 py-2 text-center text-sm font-medium text-white bg-violet-600 rounded-lg">
+                                    Start Learning
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
