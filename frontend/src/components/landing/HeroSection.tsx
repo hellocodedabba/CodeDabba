@@ -58,6 +58,12 @@ export function HeroSection() {
                             Explore Features
                         </Link>
                     </div>
+                    <div className="mt-4 text-sm text-zinc-500 text-center lg:text-left">
+                        Already have an account?{" "}
+                        <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors">
+                            Log in
+                        </Link>
+                    </div>
 
                     {/* Stats Mini */}
                     <div className="mt-12 flex items-center gap-8 text-sm font-medium text-zinc-500">

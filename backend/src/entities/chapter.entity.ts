@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Module } from './module.entity';
 import { Submission } from './submission.entity';
 
@@ -10,24 +10,25 @@ export class Chapter {
     @Column()
     title: string;
 
-    @ManyToOne(() => Module, (module) => module.chapters)
-    module: Module;
+    @Column('text', { nullable: true })
+    content: string; // Markdown content
 
     @Column()
     moduleId: string;
 
-    @Column({ nullable: true })
-    videoUrl: string;
+    @ManyToOne(() => Module, (module) => module.chapters, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'moduleId' })
+    module: Module;
 
-    @Column({ type: 'text', nullable: true })
-    content: string; // Markdown notes
-
-    @Column({ type: 'text', nullable: true })
-    task: string; // Task description
+    @Column({ type: 'int', default: 0 })
+    orderIndex: number;
 
     @OneToMany(() => Submission, (submission) => submission.chapter)
     submissions: Submission[];
 
-    @Column()
-    order: number;
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 }

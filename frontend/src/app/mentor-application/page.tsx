@@ -13,15 +13,39 @@ export default function MentorApplicationPage() {
         email: "",
         mobileNumber: "",
         linkedinProfile: "",
+        portfolioUrl: "",
+        resumeFileId: "",
         expertise: "",
         bio: "",
     });
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setUploading(true);
+            const file = e.target.files[0];
+            const data = new FormData();
+            data.append('file', file);
+
+            try {
+                const res = await api.post('/files/upload', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                setFormData(prev => ({ ...prev, resumeFileId: res.data.id }));
+            } catch (err) {
+                console.error("Upload failed", err);
+                setError("Failed to upload resume. Please try again.");
+            } finally {
+                setUploading(false);
+            }
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +61,8 @@ export default function MentorApplicationPage() {
                 email: "",
                 mobileNumber: "",
                 linkedinProfile: "",
+                portfolioUrl: "",
+                resumeFileId: "",
                 expertise: "",
                 bio: "",
             });
@@ -134,6 +160,42 @@ export default function MentorApplicationPage() {
                                         className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
                                         placeholder="linkedin.com/in/..."
                                     />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm text-zinc-400">Portfolio URL (Optional)</label>
+                                    <input
+                                        name="portfolioUrl"
+                                        value={formData.portfolioUrl}
+                                        onChange={handleChange}
+                                        className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+                                        placeholder="your-portfolio.com"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm text-zinc-400">Resume / CV (PDF)</label>
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            accept=".pdf"
+                                            onChange={handleFileChange}
+                                            className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-700"
+                                        />
+                                        {uploading && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-violet-400 text-sm flex items-center gap-2">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Uploading...
+                                            </div>
+                                        )}
+                                        {formData.resumeFileId && !uploading && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-400 text-sm flex items-center gap-2">
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                Uploaded
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

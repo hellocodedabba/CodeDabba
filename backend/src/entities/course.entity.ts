@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Module } from './module.entity';
+import { File } from './file.entity';
 import { Enrollment } from './enrollment.entity';
 
 @Entity()
@@ -11,20 +12,31 @@ export class Course {
     @Column()
     title: string;
 
-    @Column()
+    @Column('text')
     description: string;
 
     @Column({ nullable: true })
-    imageUrl: string;
+    thumbnailId: string;
 
-    @ManyToOne(() => User, (user) => user.courses)
-    mentor: User;
+    @ManyToOne(() => File)
+    @JoinColumn({ name: 'thumbnailId' })
+    thumbnail: File;
 
     @Column()
     mentorId: string;
 
+    @ManyToOne(() => User, (user) => user.courses)
+    @JoinColumn({ name: 'mentorId' })
+    mentor: User;
+
+    @Column({ default: 'Beginner' })
+    difficulty: string;
+
+    @Column({ default: 'General' })
+    category: string;
+
     @Column({ default: false })
-    published: boolean;
+    isPublished: boolean;
 
     @OneToMany(() => Module, (module) => module.course)
     modules: Module[];
