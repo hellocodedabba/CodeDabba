@@ -246,6 +246,13 @@ function RegisterForm() {
                         Google
                     </button>
                 </div>
+
+                <div className="mt-8 text-center text-sm text-zinc-400">
+                    Already have an account?{" "}
+                    <Link href="/login" className="font-medium text-violet-400 hover:text-violet-300 transition-colors">
+                        Log in
+                    </Link>
+                </div>
             </div>
         </AuthLayout>
     );

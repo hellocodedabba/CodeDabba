@@ -52,7 +52,7 @@ export function NavBar() {
                         <div className="flex gap-2">
                             <Link
                                 href="/login"
-                                className="px-4 py-2 text-sm font-medium text-zinc-300 hover:text-white transition-colors"
+                                className="px-4 py-2 text-sm font-medium text-zinc-300 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 border border-white/5 rounded-lg transition-colors"
                             >
                                 Login
                             </Link>
@@ -60,7 +60,7 @@ export function NavBar() {
                                 href="/register"
                                 className="px-4 py-2 text-sm font-medium text-white bg-white/10 border border-white/10 rounded-lg hover:bg-white/20 transition-all"
                             >
-                                Get Started
+                                Start Learning
                             </Link>
                         </div>
                     )}
@@ -90,7 +90,7 @@ export function NavBar() {
                             Login
                         </Link>
                         <Link href="/register" className="px-4 py-2 text-center text-sm font-medium text-white bg-violet-600 rounded-lg">
-                            Get Started
+                            Start Learning
                         </Link>
                     </div>
                 </div>

@@ -169,6 +169,13 @@ function LoginForm() {
                     Google
                 </button>
             </div>
+
+            <div className="mt-8 text-center text-sm text-zinc-400">
+                Don&apos;t have an account?{" "}
+                <Link href="/register" className="font-medium text-violet-400 hover:text-violet-300 transition-colors">
+                    Register
+                </Link>
+            </div>
         </AuthLayout>
     );
 }

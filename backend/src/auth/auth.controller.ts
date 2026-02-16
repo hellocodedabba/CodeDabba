@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../modules/users/dto/create-user.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -12,7 +12,7 @@ export class AuthController {
         // Validate user first
         const validUser = await this.authService.validateUser(body.email, body.password);
         if (!validUser) {
-            return { message: 'Invalid credentials' }; // Or throw UnauthorizedException
+            throw new UnauthorizedException('Invalid credentials');
         }
         return this.authService.login(validUser);
     }
