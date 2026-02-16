@@ -34,4 +34,15 @@ export class AuthController {
     async refreshTokens(@Body() body: { userId: string; refreshToken: string }) {
         return this.authService.refreshTokens(body.userId, body.refreshToken);
     }
+
+    @Post('google')
+    async googleLogin(@Body('token') token: string) {
+        return this.authService.loginWithGoogle(token);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('set-password')
+    async setPassword(@Request() req, @Body('password') password: string) {
+        return this.authService.setPassword(req.user.sub, password);
+    }
 }

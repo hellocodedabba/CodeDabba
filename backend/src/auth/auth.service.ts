@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../modules/users/dto/create-user.dto';
 import { RefreshToken } from '../entities/refresh-token.entity';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
 
     async validateUser(email: string, pass: string): Promise<any> {
         const user = await this.usersService.findByEmail(email);
-        if (user && (await bcrypt.compare(pass, user.password))) {
+        if (user && user.password && (await bcrypt.compare(pass, user.password))) {
             const { password, ...result } = user;
             return result;
         }
@@ -111,5 +112,52 @@ export class AuthService {
             access_token: at,
             refresh_token: rt,
         };
+    }
+    async verifyGoogleToken(token: string) {
+        try {
+            const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch user info');
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error(error);
+            throw new UnauthorizedException('Invalid Google Token');
+        }
+    }
+
+    async loginWithGoogle(token: string) {
+        const payload = await this.verifyGoogleToken(token);
+        if (!payload || !payload.email) throw new UnauthorizedException('Invalid Google Token');
+
+        const { email, name, sub: googleId, picture } = payload;
+
+        let user = await this.usersService.findByEmail(email);
+
+        // If user doesn't exist, create one
+        if (!user) {
+            user = await this.usersService.createFromGoogle({
+                email,
+                name: name || 'Google User',
+                googleId,
+                picture
+            });
+        } else if (!user.googleId) {
+            // If user exists but no googleId, link it
+            await this.usersService.updateGoogleId(user.id, googleId);
+            user.googleId = googleId;
+        }
+
+        const tokens = await this.getTokens(user.id, user.email, user.role);
+        await this.updateRefreshToken(user.id, tokens.refresh_token);
+        return {
+            user,
+            ...tokens,
+        };
+    }
+
+    async setPassword(userId: string, password: string) {
+        return this.usersService.updatePassword(userId, password);
     }
 }

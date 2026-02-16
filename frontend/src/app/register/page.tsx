@@ -8,13 +8,35 @@ import { Input } from "@/components/ui/input";
 import { AuthLayout } from "@/components/AuthLayout";
 import { useAuth } from "@/context/AuthProvider";
 import { ResponsiveRobot } from "@/components/ResponsiveRobot";
+import { Eye, EyeOff } from "lucide-react";
+import { useGoogleLogin } from '@react-oauth/google';
 
 function RegisterForm() {
-    const { user, isLoading: authLoading } = useAuth();
+    const { user, isLoading: authLoading, login } = useAuth();
     const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
     const roleParam = searchParams.get("role");
+
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const res = await api.post('/auth/google', { token: tokenResponse.access_token });
+                login(res.data);
+                if (!res.data.user.password) {
+                    router.push("/set-password");
+                } else {
+                    router.push("/dashboard");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Google Register Failed");
+            }
+        },
+        onError: () => console.log('Login Failed'),
+    });
 
     const [formData, setFormData] = useState({
         name: "",
@@ -27,10 +49,14 @@ function RegisterForm() {
     });
     const [loading, setLoading] = useState(false);
 
-    // Redirect if already logged in
+    // Redirect if already logged in and fully setup
     useEffect(() => {
         if (!authLoading && user) {
-            router.push("/dashboard");
+            if (user.password) {
+                router.push("/dashboard");
+            } else {
+                router.push("/set-password");
+            }
         }
     }, [user, authLoading, router]);
 
@@ -168,30 +194,56 @@ function RegisterForm() {
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <Input
-                                    id="password"
-                                    name="password"
-                                    placeholder="Password"
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    onFocus={() => setFocusedField("password")}
-                                    onBlur={() => setFocusedField(null)}
-                                    required
-                                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
-                                />
-                                <Input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    placeholder="Confirm Password"
-                                    type="password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    onFocus={() => setFocusedField("confirmPassword")}
-                                    onBlur={() => setFocusedField(null)}
-                                    required
-                                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        name="password"
+                                        placeholder="Password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        onFocus={() => setFocusedField("password")}
+                                        onBlur={() => setFocusedField(null)}
+                                        required
+                                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50 pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff size={20} />
+                                        ) : (
+                                            <Eye size={20} />
+                                        )}
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <Input
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        placeholder="Confirm Password"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        onFocus={() => setFocusedField("confirmPassword")}
+                                        onBlur={() => setFocusedField(null)}
+                                        required
+                                        className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50 pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff size={20} />
+                                        ) : (
+                                            <Eye size={20} />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -242,6 +294,7 @@ function RegisterForm() {
                     <button
                         className="relative flex items-center justify-center px-4 w-full rounded-lg h-10 font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white transition-colors"
                         type="button"
+                        onClick={() => googleLogin()}
                     >
                         Google
                     </button>

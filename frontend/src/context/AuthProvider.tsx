@@ -2,12 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '@/lib/axios';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 interface User {
     id: string;
     email: string;
     role: string;
     name?: string;
+    password?: string;
 }
 
 interface AuthContextType {
@@ -51,6 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const login = (data: any) => {
         // Expected data: { user: User, access_token: string, refresh_token: string }
+        if (!data.user) {
+            console.error("Login failed: User data missing in response", data);
+            return;
+        }
         setUser(data.user);
         setRole(data.user.role);
         localStorage.setItem('access_token', data.access_token);
@@ -74,9 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, role, isLoading, login, logout }}>
-            {children}
-        </AuthContext.Provider>
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID"}>
+            <AuthContext.Provider value={{ user, role, isLoading, login, logout }}>
+                {children}
+            </AuthContext.Provider>
+        </GoogleOAuthProvider>
     );
 }
 
