@@ -5,9 +5,11 @@ import { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/axios";
+import { useGoogleLogin } from '@react-oauth/google';
 import { AuthLayout } from "@/components/AuthLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 
 import { ResponsiveRobot } from "@/components/ResponsiveRobot";
 
@@ -16,15 +18,35 @@ function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const roleParam = searchParams.get("role");
 
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const res = await api.post('/auth/google', { token: tokenResponse.access_token });
+                login(res.data);
+                if (!res.data.user.password) {
+                    router.push("/set-password");
+                }
+                // else redirection is handled by useEffect
+            } catch (error) {
+                console.error(error);
+                alert("Google Login Failed");
+            }
+        },
+        onError: () => console.log('Login Failed'),
+    });
+
     // Redirect if already logged in
     useEffect(() => {
         if (!authLoading && user) {
-            if (user.role === 'ADMIN') router.push("/admin/dashboard");
+            if (!user.password) {
+                router.push("/set-password");
+            } else if (user.role === 'ADMIN') router.push("/admin/dashboard");
             else if (user.role === 'MENTOR') router.push("/mentor/dashboard");
             else router.push("/dashboard"); // Default to student dashboard
         }
@@ -95,17 +117,30 @@ function LoginForm() {
                     </div>
                     <div className="space-y-2">
                         {/* <Label htmlFor="password" className="text-zinc-300">Password</Label> */}
-                        <Input
-                            id="password"
-                            placeholder="Password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            onFocus={() => setFocusedField("password")}
-                            onBlur={() => setFocusedField(null)}
-                            required
-                            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                placeholder="Password"
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onFocus={() => setFocusedField("password")}
+                                onBlur={() => setFocusedField(null)}
+                                required
+                                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50 pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
+                            >
+                                {showPassword ? (
+                                    <EyeOff size={20} />
+                                ) : (
+                                    <Eye size={20} />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -165,6 +200,7 @@ function LoginForm() {
                 <button
                     className="relative flex items-center justify-center px-4 w-full rounded-lg h-10 font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white transition-colors"
                     type="button"
+                    onClick={() => googleLogin()}
                 >
                     Google
                 </button>

@@ -36,4 +36,27 @@ export class UsersService {
         user.role = role as any;
         return this.usersRepository.save(user); // Fixed: Save the entity instance, not just the ID
     }
+    async createFromGoogle(data: { email: string; name: string; googleId: string; picture?: string }): Promise<User> {
+        const user = this.usersRepository.create({
+            email: data.email,
+            name: data.name,
+            googleId: data.googleId,
+            password: null, // Explicitly null for Google users
+            // role: 'STUDENT', // Default is handled by entity default
+        });
+        return this.usersRepository.save(user);
+    }
+
+    async updateGoogleId(id: string, googleId: string): Promise<User> {
+        const user = await this.findById(id);
+        user.googleId = googleId;
+        return this.usersRepository.save(user);
+    }
+
+    async updatePassword(id: string, password: string): Promise<User> {
+        const user = await this.findById(id);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
+        return this.usersRepository.save(user);
+    }
 }
