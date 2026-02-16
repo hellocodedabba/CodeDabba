@@ -26,13 +26,13 @@ function LoginForm() {
         if (!authLoading && user) {
             if (user.role === 'ADMIN') router.push("/admin/dashboard");
             else if (user.role === 'MENTOR') router.push("/mentor/dashboard");
-            else router.push("/student/dashboard"); // Default to student
+            else router.push("/dashboard"); // Default to student dashboard
         }
     }, [user, authLoading, router]);
 
     // Prevent flashing of login form while checking auth
     if (authLoading || user) {
-        return null; // Or a loading spinner
+        return null;
     }
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -41,7 +41,8 @@ function LoginForm() {
 
         try {
             const response = await api.post('/auth/login', { email, password });
-            login(response.data); // Login function expects full response object with tokens and user
+            login(response.data);
+            // Redirection handled by useEffect or could be done here immediately
         } catch (e: unknown) {
             console.error(e);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,12 +52,10 @@ function LoginForm() {
         }
     };
 
-    const roleTitle = roleParam ? `${roleParam.charAt(0).toUpperCase() + roleParam.slice(1)} Login` : "Sign in to your account";
-
     return (
         <AuthLayout
             title="Welcome Back"
-            subtitle="Sign in to continue your journey with CodeDabba. Access your courses, track your progress, and level up your skills."
+            subtitle="Sign in to continue your journey with CodeDabba."
         >
             {/* Robot Assistant */}
             <div className="flex justify-center -mt-8">
@@ -65,7 +64,7 @@ function LoginForm() {
 
             <div className="text-center lg:text-left">
                 <h2 className="text-2xl font-bold tracking-tight text-white">
-                    {roleTitle}
+                    Sign in to your account
                 </h2>
                 <p className="mt-2 text-sm text-zinc-400">
                     Don't have an account?{" "}

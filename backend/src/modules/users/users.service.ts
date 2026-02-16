@@ -25,9 +25,15 @@ export class UsersService {
         return this.usersRepository.findOne({ where: { email } });
     }
 
-    async findById(id: string): Promise<User | null> {
+    async findById(id: string): Promise<User> {
         const user = await this.usersRepository.findOne({ where: { id } });
         if (!user) throw new NotFoundException('User not found');
         return user;
+    }
+
+    async updateRole(id: string, role: string): Promise<User> {
+        const user = await this.findById(id);
+        user.role = role as any;
+        return this.usersRepository.save(user); // Fixed: Save the entity instance, not just the ID
     }
 }

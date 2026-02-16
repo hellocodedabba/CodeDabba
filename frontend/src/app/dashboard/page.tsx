@@ -1,99 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import api from "@/lib/api";
-import { useAuth } from "@/lib/auth-context";
-import { CourseCard } from "@/components/CourseCard";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthProvider";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { ResponsiveRobot } from "@/components/ResponsiveRobot";
 
-
-interface Course {
-    id: string;
-    title: string;
-    description: string;
-    imageUrl: string;
-    instructor: string;
-    progress: number;
-    totalModules: number;
-}
-
-export default function DashboardPage() {
-    const { user, logout } = useAuth();
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [loading, setLoading] = useState(true);
-
+export default function DashboardRoutingPage() {
+    const { user, isLoading, role } = useAuth();
+    const router = useRouter();
 
     useEffect(() => {
-        // Ideally check auth here, but protected route wrapper handles it mostly.
-        // However, fetching data:
-        const fetchCourses = async () => {
-            try {
-                const response = await api.get('/courses');
-                setCourses(response.data);
-            } catch (error: unknown) {
-                console.error("Failed to fetch courses", error);
-                // Fallback demo data if API fails (or for initial demo if backend not ready)
-                // But backend IS ready, so let's rely on it or handle error gracefully.
-            } finally {
-                setLoading(false);
+        if (!isLoading) {
+            if (!user) {
+                router.push("/login");
+            } else {
+                if (role === 'ADMIN') router.push("/admin/dashboard");
+                else if (role === 'MENTOR') router.push("/mentor/dashboard");
+                else router.push("/student/dashboard");
             }
-        };
-
-        fetchCourses();
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            </div>
-        );
-    }
+        }
+    }, [user, isLoading, role, router]);
 
     return (
-        <ProtectedRoute>
-            <div className="min-h-screen bg-neutral-950 text-white">
-                <nav className="bg-zinc-900 border-b border-zinc-800 shadow-sm">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between h-16">
-                            <div className="flex items-center">
-                                <h1 className="text-2xl font-bold text-violet-500">CodeDabba</h1>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-zinc-300">
-                                    Welcome, {user?.name || user?.email}
-                                </span>
-                                <button
-                                    onClick={logout}
-                                    className="text-zinc-400 hover:text-white transition-colors"
-                                >
-                                    Sign out
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-
-                <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                    <div className="px-4 py-6 sm:px-0">
-                        <h2 className="text-2xl font-bold text-white mb-6">
-                            Your Courses
-                        </h2>
-
-                        {courses.length === 0 ? (
-                            <div className="text-center py-12">
-                                <p className="text-zinc-400">No courses found.</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {courses.map((course) => (
-                                    <CourseCard key={course.id} course={course} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </main>
+        <div className="flex h-screen w-full items-center justify-center bg-black text-white">
+            <div className="flex flex-col items-center gap-4">
+                <ResponsiveRobot focusedField={null} />
+                <p className="animate-pulse text-lg font-medium text-violet-400">Redirecting to your dashboard...</p>
             </div>
-        </ProtectedRoute>
+        </div>
     );
 }

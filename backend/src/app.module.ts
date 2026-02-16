@@ -15,7 +15,9 @@ import { Chapter } from './entities/chapter.entity';
 import { Submission } from './entities/submission.entity';
 import { Enrollment } from './entities/enrollment.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { MentorApplication } from './entities/mentor-application.entity';
 import { CoursesController } from './modules/courses/courses.controller';
+import { MentorApplicationsModule } from './modules/mentor-applications/mentor-applications.module';
 
 @Module({
   imports: [
@@ -37,7 +39,7 @@ import { CoursesController } from './modules/courses/courses.controller';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken],
+          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {
             rejectUnauthorized: false,
@@ -48,6 +50,7 @@ import { CoursesController } from './modules/courses/courses.controller';
     }),
     UsersModule,
     AuthModule,
+    MentorApplicationsModule,
   ],
   controllers: [AppController, CoursesController],
   providers: [AppService],

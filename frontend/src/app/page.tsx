@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { StatsSection } from "@/components/landing/StatsSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { BlogSection } from "@/components/landing/BlogSection";
+import { MentorApplicationSection } from "@/components/landing/MentorApplicationSection";
 import Link from "next/link";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
         <StatsSection />
         <FeaturesSection />
         <BlogSection />
+        <MentorApplicationSection />
 
         {/* CTA Section */}
         <section className="py-24 relative overflow-hidden">
