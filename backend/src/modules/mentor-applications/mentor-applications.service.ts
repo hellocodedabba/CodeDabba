@@ -44,7 +44,7 @@ export class MentorApplicationsService {
 
         // Create User
         // Generate a temporary password (or fixed one for simplicity in this demo context)
-        const tempPassword = 'CodeDabbaMentor123!';
+        const tempPassword = 'Mentor@128#';
 
         // Check if user exists (maybe they were a student?)
         let user = await this.usersService.findByEmail(application.email);
