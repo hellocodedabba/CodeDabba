@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, Index } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
@@ -7,10 +7,11 @@ export class MentorProfile {
     id: string;
 
     @OneToOne(() => User, (user) => user.mentorProfile)
-    @JoinColumn()
+    @JoinColumn({ name: 'userId' })
     user: User;
 
     @Column()
+    @Index()
     userId: string;
 
     @Column({ nullable: true })

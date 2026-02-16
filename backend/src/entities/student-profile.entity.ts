@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, Index } from 'typeorm';
 import { User } from './user.entity';
 
 export enum EnrollmentStatus {
@@ -13,11 +13,12 @@ export class StudentProfile {
     id: string;
 
     @OneToOne(() => User, (user) => user.studentProfile)
-    @JoinColumn()
+    @JoinColumn({ name: 'userId' })
     user: User;
 
     @Column()
-    userId: string; // TypeORM maps userId from relation, but good to have explicit column sometimes for query builder
+    @Index()
+    userId: string;
 
     @Column({ nullable: true })
     paymentProofUrl: string;

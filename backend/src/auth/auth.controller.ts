@@ -1,6 +1,7 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../modules/users/dto/create-user.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -9,7 +10,6 @@ export class AuthController {
     @Post('login')
     async login(@Body() body) {
         // Validate user first
-        // Assuming body has email and password
         const validUser = await this.authService.validateUser(body.email, body.password);
         if (!validUser) {
             return { message: 'Invalid credentials' }; // Or throw UnauthorizedException
@@ -20,5 +20,18 @@ export class AuthController {
     @Post('register')
     async register(@Body() createUserDto: CreateUserDto) {
         return this.authService.register(createUserDto);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('logout')
+    @HttpCode(HttpStatus.OK)
+    async logout(@Request() req) {
+        return this.authService.logout(req.user['id']);
+    }
+
+    @Post('refresh')
+    @HttpCode(HttpStatus.OK)
+    async refreshTokens(@Body() body: { userId: string; refreshToken: string }) {
+        return this.authService.refreshTokens(body.userId, body.refreshToken);
     }
 }
