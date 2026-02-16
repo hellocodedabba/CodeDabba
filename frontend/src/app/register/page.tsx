@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, FormEvent, Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import api from "@/lib/api";
+import api from "@/lib/axios";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { AuthLayout } from "@/components/AuthLayout";
+import { useAuth } from "@/context/AuthProvider";
+import { ResponsiveRobot } from "@/components/ResponsiveRobot";
 
-export default function RegisterPage() {
+function RegisterForm() {
+    const { user, isLoading: authLoading } = useAuth();
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const roleParam = searchParams.get("role");
+
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -16,11 +23,23 @@ export default function RegisterPage() {
         location: "",
         password: "",
         confirmPassword: "",
+        role: roleParam ? roleParam.toUpperCase() : "STUDENT",
     });
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Redirect if already logged in
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.push("/dashboard");
+        }
+    }, [user, authLoading, router]);
+
+    // Prevent flashing of register form while checking auth
+    if (authLoading || user) {
+        return null; // Or a loading spinner
+    }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -40,149 +59,214 @@ export default function RegisterPage() {
             return;
         }
 
+        if (formData.password.length < 6) {
+            alert("Password must be at least 6 characters!");
+            setLoading(false);
+            return;
+        }
+
         try {
             const { confirmPassword, ...dataToSend } = formData;
+            // Ensure mobileNumber is sent correctly (already validated)
             await api.post('/auth/register', dataToSend);
             alert("Registration successful! Please login.");
-            router.push("/login");
-        } catch (e: unknown) {
+            router.push(`/login?role=${formData.role.toLowerCase()}`);
+        } catch (e: any) {
             console.error(e);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            alert((e as any).response?.data?.message || "Registration failed");
+
+            // Extract meaningful error message
+            let message = "Registration failed";
+            if (e.response?.data?.message) {
+                if (Array.isArray(e.response.data.message)) {
+                    message = e.response.data.message.join(', ');
+                } else {
+                    message = e.response.data.message;
+                }
+            }
+            alert(message);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex w-full items-center justify-center dark:bg-black">
-            <div className="w-full flex">
-                <div className="hidden lg:flex w-1/2 relative bg-slate-950 flex-col items-center justify-center p-12 text-white overflow-hidden min-h-screen">
-                    <div
-                        className={cn(
-                            "absolute h-full w-full inset-0 bg-neutral-950"
-                        )}
-                    >
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-                    </div>
-                    <div className="relative z-10 max-w-lg text-center">
-                        <h1 className="text-5xl font-bold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
-                            Join CodeDabba
-                        </h1>
-                        <p className="text-lg text-neutral-400 leading-relaxed">
-                            Start your learning journey today. Create an account to access premium courses, mentor support, and a community of developers.
-                        </p>
-                    </div>
+        <AuthLayout title="Join CodeDabba" subtitle="Create your account">
+            <div className="w-full">
+                {/* Robot Assistant */}
+                <div className="flex justify-center -mt-8 mb-6">
+                    <ResponsiveRobot focusedField={focusedField} />
                 </div>
 
-                <div className="w-full lg:w-1/2 bg-white dark:bg-black flex items-center justify-center p-8 min-h-screen">
-                    <div className="w-full max-w-md space-y-8">
-                        <div className="text-center lg:text-left">
-                            <h2 className="text-3xl font-bold text-neutral-800 dark:text-neutral-200">
-                                Create Account
-                            </h2>
-                            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                Already have an account?{" "}
-                                <Link
-                                    href="/login"
-                                    className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 transition-colors"
-                                >
-                                    Sign In
-                                </Link>
-                            </p>
-                        </div>
+                <div className="text-center lg:text-left">
+                    <h2 className="text-2xl font-bold tracking-tight text-white">
+                        Create an account
+                    </h2>
+                    <p className="mt-2 text-sm text-zinc-400">
+                        Already have an account?{" "}
+                        <Link
+                            href="/login"
+                            className="font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                        >
+                            Login
+                        </Link>
+                    </p>
+                </div>
 
-                        <form className="mt-8 space-y-5" onSubmit={handleRegister}>
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Full Name</Label>
-                                    <Input
-                                        id="name"
-                                        name="name"
-                                        placeholder="Tyler Durden"
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        name="email"
-                                        placeholder="projectmayhem@fc.com"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="mobileNumber">Mobile Number</Label>
-                                    <Input
-                                        id="mobileNumber"
-                                        name="mobileNumber"
-                                        placeholder="9876543210"
-                                        type="text"
-                                        value={formData.mobileNumber}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="location">Location</Label>
-                                    <Input
-                                        id="location"
-                                        name="location"
-                                        placeholder="New York, USA"
-                                        type="text"
-                                        value={formData.location}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="password">Password</Label>
-                                        <Input
-                                            id="password"
-                                            name="password"
-                                            placeholder="••••••••"
-                                            type="password"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="confirmPassword">Confirm</Label>
-                                        <Input
-                                            id="confirmPassword"
-                                            name="confirmPassword"
-                                            placeholder="••••••••"
-                                            type="password"
-                                            value={formData.confirmPassword}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                <form className="mt-8 space-y-5" onSubmit={handleRegister}>
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-4">
+                            <Input
+                                id="name"
+                                name="name"
+                                placeholder="Full Name"
+                                type="text"
+                                value={formData.name}
+                                onChange={handleChange}
+                                onFocus={() => setFocusedField("name")}
+                                onBlur={() => setFocusedField(null)}
+                                required
+                                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
+                            />
+                            <Input
+                                id="email"
+                                name="email"
+                                placeholder="Email Address"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                onFocus={() => setFocusedField("email")}
+                                onBlur={() => setFocusedField(null)}
+                                required
+                                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
+                            />
+                            {/* Role Selection */}
+                            <div className="relative">
+                                <select
+                                    name="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                    className="flex h-10 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="STUDENT">Student</option>
+                                    <option value="MENTOR">Mentor</option>
+                                    {/* Admin registration usually restricted, keeping hidden or just not allowing via UI if strict, but let's allow for demo */}
+                                </select>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="group relative flex w-full justify-center rounded-md bg-gradient-to-br from-black to-neutral-600 dark:from-zinc-900 dark:to-zinc-900 px-4 py-3 text-sm font-semibold text-white shadow-xl shadow-input hover:scale-[1.01] hover:shadow-2xl hover:shadow-black/20 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 dark:focus:ring-neutral-400 dark:focus:ring-offset-neutral-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-4"
-                            >
-                                {loading ? "Creating Account..." : "Sign Up →"}
-                                <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                                <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 blur-sm transition-opacity group-hover:opacity-100" />
-                            </button>
-                        </form>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    id="mobileNumber"
+                                    name="mobileNumber"
+                                    placeholder="Mobile Number"
+                                    type="text"
+                                    value={formData.mobileNumber}
+                                    onChange={handleChange}
+                                    onFocus={() => setFocusedField("mobileNumber")}
+                                    onBlur={() => setFocusedField(null)}
+                                    required
+                                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
+                                />
+                                <Input
+                                    id="location"
+                                    name="location"
+                                    placeholder="Location"
+                                    type="text"
+                                    value={formData.location}
+                                    onChange={handleChange}
+                                    onFocus={() => setFocusedField("location")}
+                                    onBlur={() => setFocusedField(null)}
+                                    required
+                                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                    id="password"
+                                    name="password"
+                                    placeholder="Password"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    onFocus={() => setFocusedField("password")}
+                                    onBlur={() => setFocusedField(null)}
+                                    required
+                                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
+                                />
+                                <Input
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    placeholder="Confirm Password"
+                                    type="password"
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    onFocus={() => setFocusedField("confirmPassword")}
+                                    onBlur={() => setFocusedField(null)}
+                                    required
+                                    className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center">
+                        <input
+                            id="terms"
+                            name="terms"
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-violet-600 focus:ring-violet-600"
+                            required
+                        />
+                        <label
+                            htmlFor="terms"
+                            className="ml-2 block text-sm text-zinc-400"
+                        >
+                            I agree to the <span className="text-violet-400 cursor-pointer hover:underline">Terms & Conditions</span>
+                        </label>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full justify-center rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-zinc-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                    >
+                        {loading ? "Creating Account..." : "Create Account"}
+                    </button>
+                </form>
+
+                <div className="relative my-8">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-zinc-800" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-zinc-950 px-2 text-zinc-500">
+                            Or register with
+                        </span>
                     </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <button
+                        className="relative flex items-center justify-center px-4 w-full rounded-lg h-10 font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white transition-colors"
+                        type="button"
+                    >
+                        GitHub
+                    </button>
+                    <button
+                        className="relative flex items-center justify-center px-4 w-full rounded-lg h-10 font-medium bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white transition-colors"
+                        type="button"
+                    >
+                        Google
+                    </button>
+                </div>
             </div>
-        </div>
+        </AuthLayout>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <RegisterForm />
+        </Suspense>
     );
 }

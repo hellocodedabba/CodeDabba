@@ -14,6 +14,7 @@ import { Module as CourseModule } from './entities/module.entity'; // Rename to 
 import { Chapter } from './entities/chapter.entity';
 import { Submission } from './entities/submission.entity';
 import { Enrollment } from './entities/enrollment.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { CoursesController } from './modules/courses/courses.controller';
 
 @Module({
@@ -36,7 +37,7 @@ import { CoursesController } from './modules/courses/courses.controller';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment],
+          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {
             rejectUnauthorized: false,

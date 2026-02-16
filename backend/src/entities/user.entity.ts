@@ -4,6 +4,7 @@ import { MentorProfile } from './mentor-profile.entity';
 import { Course } from './course.entity';
 import { Enrollment } from './enrollment.entity';
 import { Submission } from './submission.entity';
+import { RefreshToken } from './refresh-token.entity';
 
 export enum Role {
     STUDENT = 'STUDENT',
@@ -57,4 +58,7 @@ export class User {
 
     @OneToMany(() => Submission, (submission) => submission.user)
     submissions: Submission[];
+
+    @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+    refreshTokens: RefreshToken[];
 }

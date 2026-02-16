@@ -44,9 +44,12 @@ export default function AuthProvider({
                 try {
                     const { data } = await api.get('/users/me');
                     setUser(data);
-                } catch (error: unknown) {
-                    console.error("Auth check failed", error);
+                } catch (error: any) {
+                    if (error.response?.status !== 401) {
+                        console.error("Auth check failed", error);
+                    }
                     localStorage.removeItem("token");
+                    setUser(null);
                 } finally {
                     setLoading(false);
                 }
