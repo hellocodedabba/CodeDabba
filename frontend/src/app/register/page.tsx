@@ -23,7 +23,7 @@ function RegisterForm() {
         location: "",
         password: "",
         confirmPassword: "",
-        role: roleParam ? roleParam.toUpperCase() : "STUDENT",
+        role: "STUDENT", // Default to STUDENT
     });
     const [loading, setLoading] = useState(false);
 
@@ -70,7 +70,7 @@ function RegisterForm() {
             // Ensure mobileNumber is sent correctly (already validated)
             await api.post('/auth/register', dataToSend);
             alert("Registration successful! Please login.");
-            router.push(`/login?role=${formData.role.toLowerCase()}`);
+            router.push(`/login`);
         } catch (e: any) {
             console.error(e);
 
@@ -139,19 +139,7 @@ function RegisterForm() {
                                 required
                                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-violet-500/50"
                             />
-                            {/* Role Selection */}
-                            <div className="relative">
-                                <select
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <option value="STUDENT">Student</option>
-                                    <option value="MENTOR">Mentor</option>
-                                    {/* Admin registration usually restricted, keeping hidden or just not allowing via UI if strict, but let's allow for demo */}
-                                </select>
-                            </div>
+                            {/* Role Selection Removed - Defaulting to Student internally */}
 
                             <div className="grid grid-cols-2 gap-4">
                                 <Input

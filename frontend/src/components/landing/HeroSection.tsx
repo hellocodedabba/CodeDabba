@@ -43,19 +43,19 @@ export function HeroSection() {
                         Stop watching tutorials. Start building real-world projects with an automated mentorship platform that tracks your every line of code.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center lg:justify-start">
                         <Link
-                            href="/register?role=student"
-                            className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-violet-600 rounded-xl hover:bg-violet-700 transition-all shadow-[0_0_20px_-5px_rgba(124,58,237,0.5)] hover:shadow-[0_0_25px_-5px_rgba(124,58,237,0.7)] group"
+                            href="/register"
+                            className="px-8 py-4 text-lg font-bold text-white bg-violet-600 rounded-2xl hover:bg-violet-500 transition-all hover:scale-105 shadow-xl shadow-violet-500/20 flex items-center justify-center gap-2"
                         >
-                            Start Coding Now
-                            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            Start Learning Now
+                            <ArrowRight className="w-5 h-5" />
                         </Link>
                         <Link
-                            href="/login"
-                            className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-zinc-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all hover:text-white"
+                            href="#features"
+                            className="px-8 py-4 text-lg font-bold text-zinc-300 border border-zinc-700 bg-zinc-900/50 backdrop-blur-sm rounded-2xl hover:bg-zinc-800 transition-all hover:text-white flex items-center justify-center"
                         >
-                            View Demo
+                            Explore Features
                         </Link>
                     </div>
 
