@@ -6,6 +6,8 @@ import { NavBar } from "@/components/landing/NavBar";
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { toast } from 'react-hot-toast';
+import { FullScreenLoader } from "@/components/ui/full-screen-loader";
 
 interface MentorApplication {
     id: string;
@@ -23,6 +25,13 @@ interface MentorApplication {
 
 export default function AdminDashboard() {
     const { user, logout } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await logout();
+        setIsLoggingOut(false);
+    };
     const [activeTab, setActiveTab] = useState<'overview' | 'applications'>('overview');
     const [applications, setApplications] = useState<MentorApplication[]>([]);
     const [loadingApps, setLoadingApps] = useState(false);
@@ -56,7 +65,7 @@ export default function AdminDashboard() {
             ));
         } catch (error) {
             console.error(`Failed to ${action} application`, error);
-            alert(`Failed to ${action} application`);
+            toast.error(`Failed to ${action} application`);
         } finally {
             setActionLoading(null);
         }
@@ -64,6 +73,7 @@ export default function AdminDashboard() {
 
     return (
         <ProtectedRoute allowedRoles={['ADMIN']}>
+            {isLoggingOut && <FullScreenLoader message="Signing out..." />}
             <div className="min-h-screen bg-black text-white">
                 <NavBar />
                 <div className="container mx-auto px-6 py-24">
@@ -73,8 +83,9 @@ export default function AdminDashboard() {
                             <p className="text-zinc-400">Welcome back, {user?.name || 'Admin'}!</p>
                         </div>
                         <button
-                            onClick={logout}
-                            className="px-4 py-2 text-sm text-red-400 border border-red-900/50 bg-red-900/10 rounded-lg hover:bg-red-900/20 transition-colors"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="px-4 py-2 text-sm text-red-400 border border-red-900/50 bg-red-900/10 rounded-lg hover:bg-red-900/20 transition-colors flex items-center gap-2 disabled:opacity-50"
                         >
                             Sign Out
                         </button>

@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { ResponsiveRobot } from "@/components/ResponsiveRobot";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from '@react-oauth/google';
+import { toast } from 'react-hot-toast';
 
 function RegisterForm() {
     const { user, isLoading: authLoading, login } = useAuth();
@@ -32,7 +33,7 @@ function RegisterForm() {
                 }
             } catch (error) {
                 console.error(error);
-                alert("Google Register Failed");
+                toast.error("Google Register Failed");
             }
         },
         onError: () => console.log('Login Failed'),
@@ -54,17 +55,17 @@ function RegisterForm() {
 
     const handleSendOtp = async () => {
         if (!formData.email) {
-            alert("Please enter an email address first.");
+            toast.error("Please enter an email address first.");
             return;
         }
         setLoading(true);
         try {
             await api.post('/otp/send', { email: formData.email, type: 'REGISTRATION' });
             setOtpSent(true);
-            alert("OTP sent to your email!");
+            toast.success("OTP sent to your email!");
         } catch (error: any) {
             console.error(error);
-            alert("Failed to send OTP: " + (error.response?.data?.message || error.message));
+            toast.error("Failed to send OTP: " + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -77,13 +78,13 @@ function RegisterForm() {
             const res = await api.post('/otp/verify', { email: formData.email, otp, type: 'REGISTRATION' });
             if (res.data.valid) {
                 setOtpVerified(true);
-                alert("Email verified successfully!");
+                toast.success("Email verified successfully!");
             } else {
-                alert("Invalid OTP");
+                toast.error("Invalid OTP");
             }
         } catch (error: any) {
             console.error(error);
-            alert("Verification failed: " + (error.response?.data?.message || error.message));
+            toast.error("Verification failed: " + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -113,26 +114,26 @@ function RegisterForm() {
         e.preventDefault();
 
         if (!otpVerified) {
-            alert("Please verify your email with OTP first!");
+            toast.error("Please verify your email with OTP first!");
             return;
         }
 
         setLoading(true);
 
         if (formData.password !== formData.confirmPassword) {
-            alert("Passwords do not match!");
+            toast.error("Passwords do not match!");
             setLoading(false);
             return;
         }
 
         if (!/^[0-9]{10}$/.test(formData.mobileNumber)) {
-            alert("Mobile number must be 10 digits!");
+            toast.error("Mobile number must be 10 digits!");
             setLoading(false);
             return;
         }
 
         if (formData.password.length < 6) {
-            alert("Password must be at least 6 characters!");
+            toast.error("Password must be at least 6 characters!");
             setLoading(false);
             return;
         }
@@ -141,7 +142,7 @@ function RegisterForm() {
             const { confirmPassword, ...dataToSend } = formData;
             // Ensure mobileNumber is sent correctly (already validated)
             await api.post('/auth/register', dataToSend);
-            alert("Registration successful! Please login.");
+            toast.success("Welcome! Registration successful. Please login to continue.");
             router.push(`/login`);
         } catch (e: any) {
             console.error(e);
@@ -155,7 +156,7 @@ function RegisterForm() {
                     message = e.response.data.message;
                 }
             }
-            alert(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
