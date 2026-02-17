@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { CreateCourseDto } from './dto/create-course.dto';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CoursesService } from './courses.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../entities/user.entity';
 import { RolesGuard } from '../../common/guards/roles.guard';
+
 
 @Controller('courses')
 export class CoursesController {
@@ -26,10 +28,12 @@ export class CoursesController {
         return await this.coursesService.findOne(id);
     }
 
+
+
     @Post()
     @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.MENTOR, Role.ADMIN)
-    async create(@Request() req: any, @Body() body: any) {
+    @Roles(Role.MENTOR)
+    async create(@Request() req: any, @Body() body: CreateCourseDto) {
         return await this.coursesService.createCourse(req.user, body);
     }
 

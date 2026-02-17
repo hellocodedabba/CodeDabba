@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
-import { Course } from '../../entities/course.entity';
+import { Course, CourseStatus, CourseVisibility, CourseAccessType } from '../../entities/course.entity';
 import { Module as CourseModule } from '../../entities/module.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { User, Role } from '../../entities/user.entity';
+import { MentorProfile } from '../../entities/mentor-profile.entity';
+import { CreateCourseDto } from './dto/create-course.dto';
 
 @Injectable()
 export class CoursesService {
@@ -15,25 +17,68 @@ export class CoursesService {
         private modulesRepository: Repository<CourseModule>,
         @InjectRepository(Chapter)
         private chaptersRepository: Repository<Chapter>,
+        @InjectRepository(MentorProfile)
+        private mentorProfileRepository: Repository<MentorProfile>,
     ) { }
 
-    async createCourse(mentor: User, data: Partial<Course>): Promise<Course> {
-        if (mentor.role !== Role.MENTOR && mentor.role !== Role.ADMIN) {
+    async createCourse(user: User, createCourseDto: CreateCourseDto): Promise<Course> {
+        // Double check role
+        if (user.role !== Role.MENTOR) {
             throw new UnauthorizedException('Only mentors can create courses');
         }
+
+        // Verify Mentor Profile
+        const mentorProfile = await this.mentorProfileRepository.findOne({ where: { userId: user.id } });
+        if (!mentorProfile) {
+            throw new ForbiddenException('Mentor profile not found');
+        }
+        if (!mentorProfile.isVerified) {
+            throw new ForbiddenException('Only verified mentors can create courses');
+        }
+
+        // Pricing Logic
+        if (createCourseDto.accessType === CourseAccessType.FREE) {
+            createCourseDto.price = 0;
+        } else if (createCourseDto.accessType === CourseAccessType.PAID && createCourseDto.price <= 0) {
+            throw new BadRequestException('Paid courses must have a price greater than 0');
+        }
+
+        // Slug Generation
+        let slug = await this.generateSlug(createCourseDto.title);
+
         const course = this.coursesRepository.create({
-            ...data,
-            mentor,
-            mentorId: mentor.id,
+            ...createCourseDto,
+            slug,
+            mentor: user,
+            mentorId: user.id,
+            status: CourseStatus.DRAFT,
+            version: 1,
+            visibility: CourseVisibility.PRIVATE,
         });
+
         return await this.coursesRepository.save(course);
     }
 
+    private async generateSlug(title: string): Promise<string> {
+        let slug = title.toLowerCase()
+            .replace(/ /g, '-')
+            .replace(/[^\w-]+/g, '');
+
+        // Check uniqueness
+        let uniqueSlug = slug;
+        let counter = 1;
+        while (await this.coursesRepository.findOne({ where: { slug: uniqueSlug } })) {
+            uniqueSlug = `${slug}-${counter}`;
+            counter++;
+        }
+        return uniqueSlug;
+    }
+
     async findAll(query: any = {}): Promise<{ data: Course[], total: number, page: number, limit: number }> {
-        const { page = 1, limit = 10, search, category, difficulty } = query;
+        const { page = 1, limit = 10, search, category, level } = query;
         const skip = (page - 1) * limit;
 
-        const where: any = { isPublished: true };
+        const where: any = { status: CourseStatus.PUBLISHED, visibility: CourseVisibility.PUBLIC };
 
         if (search) {
             where.title = ILike(`%${search}%`);
@@ -41,8 +86,8 @@ export class CoursesService {
         if (category) {
             where.category = category;
         }
-        if (difficulty) {
-            where.difficulty = difficulty;
+        if (level) {
+            where.level = level;
         }
 
         const [data, total] = await this.coursesRepository.findAndCount({

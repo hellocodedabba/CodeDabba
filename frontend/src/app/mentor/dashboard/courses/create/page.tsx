@@ -15,7 +15,10 @@ export default function CreateCoursePage() {
         title: "",
         description: "",
         category: "Development",
-        difficulty: "Beginner",
+        level: "beginner",
+        tags: "",
+        accessType: "free",
+        price: "0",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -26,11 +29,21 @@ export default function CreateCoursePage() {
         e.preventDefault();
         setLoading(true);
         try {
-            const { data } = await api.post('/courses', formData);
+            const payload = {
+                title: formData.title,
+                description: formData.description,
+                category: formData.category,
+                level: formData.level,
+                tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+                accessType: formData.accessType,
+                price: parseFloat(formData.price) || 0,
+            };
+            const { data } = await api.post('/courses', payload);
             router.push(`/mentor/dashboard/courses/${data.id}/builder`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to create course", error);
-            // Handle error (show toast etc.)
+            const message = error.response?.data?.message || "Failed to create course";
+            alert(Array.isArray(message) ? message.join('\n') : message);
         } finally {
             setLoading(false);
         }
@@ -71,7 +84,7 @@ export default function CreateCoursePage() {
                                     required
                                     rows={4}
                                     className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all resize-none"
-                                    placeholder="What will students learn?"
+                                    placeholder="What will students learn? (Min 20 characters)"
                                 />
                             </div>
 
@@ -91,17 +104,56 @@ export default function CreateCoursePage() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm text-zinc-400">Difficulty</label>
+                                    <label className="text-sm text-zinc-400">Level</label>
                                     <select
-                                        name="difficulty"
-                                        value={formData.difficulty}
+                                        name="level"
+                                        value={formData.level}
                                         onChange={handleChange}
                                         className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all appearance-none"
                                     >
-                                        <option value="Beginner">Beginner</option>
-                                        <option value="Intermediate">Intermediate</option>
-                                        <option value="Advanced">Advanced</option>
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-zinc-400">Tags (comma separated)</label>
+                                <input
+                                    name="tags"
+                                    value={formData.tags}
+                                    onChange={handleChange}
+                                    className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
+                                    placeholder="e.g. React, Frontend, Web Dev"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm text-zinc-400">Access Type</label>
+                                    <select
+                                        name="accessType"
+                                        value={formData.accessType}
+                                        onChange={handleChange}
+                                        className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all appearance-none"
+                                    >
+                                        <option value="free">Free</option>
+                                        <option value="paid">Paid</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm text-zinc-400">Price</label>
+                                    <input
+                                        name="price"
+                                        type="number"
+                                        value={formData.price}
+                                        onChange={handleChange}
+                                        disabled={formData.accessType === 'free'}
+                                        min="0"
+                                        className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all disabled:opacity-50"
+                                        placeholder="0.00"
+                                    />
                                 </div>
                             </div>
 

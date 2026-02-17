@@ -18,7 +18,7 @@ import { Enrollment } from './entities/enrollment.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { MentorApplication } from './entities/mentor-application.entity';
 import { Otp } from './entities/otp.entity';
-import { CoursesController } from './modules/courses/courses.controller';
+import { CoursesModule } from './modules/courses/courses.module'; // Import Module, not controller
 import { MentorApplicationsModule } from './modules/mentor-applications/mentor-applications.module';
 import { OtpModule } from './modules/otp/otp.module';
 
@@ -55,6 +55,7 @@ import { OtpModule } from './modules/otp/otp.module';
     AuthModule,
     MentorApplicationsModule,
     OtpModule,
+    CoursesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
