@@ -57,31 +57,7 @@ export default function ChapterEditPage() {
 
     const fetchChapter = async () => {
         try {
-            // Updated backend endpoint to fetch chapter with blocks sorted
-            // Assuming GET /chapters/:id returns chapter with blocks
-            // If strictly needed, we might need a specific endpoint or updated existing one
-            // Trying standard endpoint first
 
-            // Wait, standard endpoint likely lives in `CoursesService` -> `findOne` (course) or something. 
-            // We probably need `GET /courses/chapters/:chapterId` or similar.
-            // But I didn't create a GET endpoint in ChaptersController.
-            // I should assume the existing `Get /courses/:id` returns nested modules/chapters but maybe not blocks.
-            // Or maybe there is `GET /chapters/:id`.
-            // Let's assume I need to fetch it.
-            // If I can't fetch it, I can't render it.
-            // Checking previous `CoursesService.findOne` implementation for course:
-            // It included `modules.chapters`. It didn't include `blocks`.
-
-            // I should use the existing course fetch for navigation context, but better to fetch chapter directly.
-            // I'll try fetching `/chapters/${chapterId}` if it exists, otherwise I might need to add it.
-            // But let's try assuming the backend has it or I can add it quickly.
-            // Actually, I didn't add GET to ChaptersController.
-            // But maybe I can use `GET /courses/chapters/:chapterId` if it exists.
-
-            // Wait! I forgot to add a GET endpoint for the chapter!
-            // I MUST implement GET /chapters/:id in ChaptersController or update CoursesController to include blocks.
-            // Since user wants "Clean separation", I'll add GET /chapters/:id to ChaptersController.
-            // But first let me finish frontend code assuming the endpoint will exist.
 
             const { data } = await api.get(`/chapters/${chapterId}`);
             setChapter(data);

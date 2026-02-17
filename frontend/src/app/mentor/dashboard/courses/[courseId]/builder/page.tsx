@@ -8,7 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Loader2, Save, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 interface Chapter {
     id: string;
@@ -95,8 +95,6 @@ export default function CourseBuilderPage() {
         try {
             // Find existing chapters count for order
             const module = course?.modules.find(m => m.id === activeModuleId);
-            const orderIndex = module?.chapters.length || 0;
-            const module = course?.modules.find(m => m.id === moduleId);
             if (!module) return;
 
             const maxOrderIndex = module.chapters.length
