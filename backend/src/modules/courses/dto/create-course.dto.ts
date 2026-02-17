@@ -28,5 +28,5 @@ export class CreateCourseDto {
 
     @IsOptional()
     @IsString()
-    thumbnailId?: string;
+    thumbnailUrl?: string;
 }

@@ -1,8 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { Module } from './module.entity';
 import { Submission } from './submission.entity';
+import { LessonBlock } from './lesson-block.entity';
 
 @Entity()
+@Index(['moduleId', 'orderIndex'], { unique: true })
 export class Chapter {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -10,8 +12,8 @@ export class Chapter {
     @Column()
     title: string;
 
-    @Column('text', { nullable: true })
-    content: string; // Markdown content
+    @Column({ default: 0 })
+    points: number;
 
     @Column()
     moduleId: string;
@@ -23,6 +25,9 @@ export class Chapter {
     @Column({ type: 'int', default: 0 })
     orderIndex: number;
 
+    @OneToMany(() => LessonBlock, (block) => block.chapter)
+    blocks: LessonBlock[];
+
     @OneToMany(() => Submission, (submission) => submission.chapter)
     submissions: Submission[];
 
@@ -31,4 +36,7 @@ export class Chapter {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
 }

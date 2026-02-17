@@ -20,16 +20,58 @@ export default function CreateCoursePage() {
         tags: "",
         accessType: "free",
         price: "0",
+        thumbnail: null as File | null,
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files?.[0]) {
+            setFormData({ ...formData, thumbnail: e.target.files[0] });
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
+            let thumbnailUrl = "";
+
+            if (formData.thumbnail) {
+                // 1. Get Signature from Backend
+                const { data: signData } = await api.post('/courses/upload-thumbnail', {
+                    filename: formData.thumbnail.name,
+                    contentType: formData.thumbnail.type
+                });
+
+                const { uploadUrl, signature, timestamp, apiKey, publicId } = signData;
+
+                // 2. Prepare Cloudinary Upload
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', formData.thumbnail);
+                uploadFormData.append('api_key', apiKey);
+                uploadFormData.append('timestamp', timestamp.toString());
+                uploadFormData.append('signature', signature);
+                uploadFormData.append('public_id', publicId);
+                uploadFormData.append('eager', 'w_400,h_300,c_fill');
+
+                // 3. Upload to Cloudinary
+                const cloudinaryRes = await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                const cloudinaryData = await cloudinaryRes.json();
+
+                if (cloudinaryData.error) {
+                    throw new Error(cloudinaryData.error.message);
+                }
+
+                thumbnailUrl = cloudinaryData.secure_url;
+            }
+
             const payload = {
                 title: formData.title,
                 description: formData.description,
@@ -38,6 +80,7 @@ export default function CreateCoursePage() {
                 tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
                 accessType: formData.accessType,
                 price: parseFloat(formData.price) || 0,
+                thumbnailUrl,
             };
             const { data } = await api.post('/courses', payload);
             router.push(`/mentor/dashboard/courses/${data.id}/builder`);
@@ -87,6 +130,19 @@ export default function CreateCoursePage() {
                                     className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all resize-none"
                                     placeholder="What will students learn? (Min 20 characters)"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-zinc-400">Course Thumbnail</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="w-full bg-zinc-800/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                                />
+                                {formData.thumbnail && (
+                                    <p className="text-sm text-indigo-400 mt-2">Selected: {formData.thumbnail.name}</p>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

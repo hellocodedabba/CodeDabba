@@ -66,9 +66,13 @@ export default function CourseBuilderPage() {
     const handleAddModule = async () => {
         if (!newModuleTitle.trim()) return;
         try {
+            const maxOrderIndex = course?.modules.length
+                ? Math.max(...course.modules.map(m => m.orderIndex))
+                : -1;
+
             const { data } = await api.post(`/courses/${courseId}/modules`, {
                 title: newModuleTitle,
-                orderIndex: course?.modules.length || 0
+                orderIndex: maxOrderIndex + 1
             });
             setCourse(prev => prev ? { ...prev, modules: [...prev.modules, { ...data, chapters: [] }] } : null);
             setNewModuleTitle("");
@@ -92,11 +96,17 @@ export default function CourseBuilderPage() {
             // Find existing chapters count for order
             const module = course?.modules.find(m => m.id === activeModuleId);
             const orderIndex = module?.chapters.length || 0;
+            const module = course?.modules.find(m => m.id === moduleId);
+            if (!module) return;
+
+            const maxOrderIndex = module.chapters.length
+                ? Math.max(...module.chapters.map(c => c.orderIndex))
+                : -1;
 
             const { data } = await api.post(`/courses/modules/${activeModuleId}/chapters`, {
                 title: newChapterTitle,
                 content: "# New Chapter\nStart writing...",
-                orderIndex
+                orderIndex: maxOrderIndex + 1
             });
 
             // Update local state
@@ -177,7 +187,11 @@ export default function CourseBuilderPage() {
                                     {expandedModules.includes(module.id) && (
                                         <div className="p-4 space-y-2">
                                             {module.chapters.map((chapter) => (
-                                                <div key={chapter.id} className="flex items-center gap-3 p-3 bg-zinc-950/50 rounded-lg border border-zinc-800 hover:border-violet-500/30 cursor-pointer group">
+                                                <div
+                                                    key={chapter.id}
+                                                    onClick={() => router.push(`/mentor/dashboard/courses/${courseId}/chapters/${chapter.id}/edit`)}
+                                                    className="flex items-center gap-3 p-3 bg-zinc-950/50 rounded-lg border border-zinc-800 hover:border-violet-500/30 cursor-pointer group"
+                                                >
                                                     <FileText className="w-4 h-4 text-zinc-500 group-hover:text-violet-400" />
                                                     <span className="text-sm text-zinc-300 group-hover:text-white">{chapter.title}</span>
                                                 </div>

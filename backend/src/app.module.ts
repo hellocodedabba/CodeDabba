@@ -20,8 +20,10 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { MentorApplication } from './entities/mentor-application.entity';
 import { Otp } from './entities/otp.entity';
 import { CoursesModule } from './modules/courses/courses.module'; // Import Module, not controller
+import { LessonBlock } from './entities/lesson-block.entity';
 import { MentorApplicationsModule } from './modules/mentor-applications/mentor-applications.module';
 import { OtpModule } from './modules/otp/otp.module';
+import { ChaptersModule } from './modules/chapters/chapters.module';
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import { OtpModule } from './modules/otp/otp.module';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, Otp, File],
+          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, Otp, File, LessonBlock],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {
             rejectUnauthorized: false,
@@ -58,6 +60,7 @@ import { OtpModule } from './modules/otp/otp.module';
     MentorApplicationsModule,
     OtpModule,
     CoursesModule,
+    ChaptersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
