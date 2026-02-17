@@ -29,10 +29,7 @@ function LoginForm() {
             try {
                 const res = await api.post('/auth/google', { token: tokenResponse.access_token });
                 login(res.data);
-                if (!res.data.user.password) {
-                    router.push("/set-password");
-                }
-                // else redirection is handled by useEffect
+                router.push("/dashboard"); // Directly go to dashboard on login, skip password set
             } catch (error) {
                 console.error(error);
                 alert("Google Login Failed");
@@ -44,9 +41,7 @@ function LoginForm() {
     // Redirect if already logged in
     useEffect(() => {
         if (!authLoading && user) {
-            if (!user.password) {
-                router.push("/set-password");
-            } else if (user.role === 'ADMIN') router.push("/admin/dashboard");
+            if (user.role === 'ADMIN') router.push("/admin/dashboard");
             else if (user.role === 'MENTOR') router.push("/mentor/dashboard");
             else router.push("/dashboard"); // Default to student dashboard
         }
