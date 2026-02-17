@@ -1,18 +1,33 @@
 
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Otp, OtpType } from '../../entities/otp.entity';
 import { MailerService } from '@nestjs-modules/mailer';
-import { MoreThan } from 'typeorm';
+import { MoreThan, LessThan } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class OtpService {
+    private readonly logger = new Logger(OtpService.name);
+
     constructor(
         @InjectRepository(Otp)
         private otpRepository: Repository<Otp>,
         private readonly mailerService: MailerService,
     ) { }
+
+    @Cron(CronExpression.EVERY_MINUTE)
+    async handleCron() {
+        this.logger.debug('Running OTP cleanup task...');
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        const result = await this.otpRepository.delete({
+            createdAt: LessThan(tenMinutesAgo),
+        });
+        if (result.affected && result.affected > 0) {
+            this.logger.debug(`Deleted ${result.affected} expired OTPs.`);
+        }
+    }
 
     async generateAndSendOtp(email: string, type: OtpType) {
         // Generate 6-digit OTP
