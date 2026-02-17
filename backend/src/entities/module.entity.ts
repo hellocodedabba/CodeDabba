@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
 import { Course } from './course.entity';
 import { Chapter } from './chapter.entity';
 
 @Entity()
+@Index(['courseId', 'orderIndex'], { unique: true })
 export class Module {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -28,4 +29,7 @@ export class Module {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
 }

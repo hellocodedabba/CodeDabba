@@ -86,11 +86,7 @@ export class Course {
     version: number;
 
     @Column({ nullable: true })
-    thumbnailId: string;
-
-    @ManyToOne(() => File)
-    @JoinColumn({ name: 'thumbnailId' })
-    thumbnail: File;
+    thumbnailUrl: string;
 
     @Column()
     mentorId: string;

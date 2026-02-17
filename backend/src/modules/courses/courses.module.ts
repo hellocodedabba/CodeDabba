@@ -6,9 +6,10 @@ import { Course } from '../../entities/course.entity';
 import { Module as CourseModule } from '../../entities/module.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { MentorProfile } from '../../entities/mentor-profile.entity';
+import { LessonBlock } from '../../entities/lesson-block.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Course, CourseModule, Chapter, MentorProfile])],
+    imports: [TypeOrmModule.forFeature([Course, CourseModule, Chapter, MentorProfile, LessonBlock])],
     providers: [CoursesService],
     controllers: [CoursesController],
     exports: [CoursesService],

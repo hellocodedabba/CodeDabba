@@ -75,7 +75,7 @@ export default function MentorCoursesPage() {
                             {courses.map((course) => (
                                 <Link
                                     key={course.id}
-                                    href={`/mentor/dashboard/courses/${course.id}`} // Or builder
+                                    href={`/mentor/dashboard/courses/${course.id}/builder`}
                                     className="block p-6 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-violet-500/50 transition-all group"
                                 >
                                     <div className="flex justify-between items-start mb-4">
