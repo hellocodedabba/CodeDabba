@@ -6,7 +6,7 @@
 # Logs
 logs
 *.log
-backend/error_log*
+error_log*
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
