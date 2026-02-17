@@ -7,6 +7,7 @@ import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { toast } from 'react-hot-toast';
 
 export default function CreateCoursePage() {
     const router = useRouter();
@@ -86,7 +87,7 @@ export default function CreateCoursePage() {
         } catch (error: any) {
             console.error("Failed to create course", error);
             const message = error.response?.data?.message || "Failed to create course";
-            alert(Array.isArray(message) ? message.join('\n') : message);
+            toast.error(Array.isArray(message) ? message.join('\n') : message);
         } finally {
             setLoading(false);
         }

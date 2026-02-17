@@ -10,6 +10,9 @@ import { AuthLayout } from "@/components/AuthLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from 'react-hot-toast';
+import { Loader2 } from "lucide-react";
+import { FullScreenLoader } from "@/components/ui/full-screen-loader";
 
 import { ResponsiveRobot } from "@/components/ResponsiveRobot";
 
@@ -29,10 +32,12 @@ function LoginForm() {
             try {
                 const res = await api.post('/auth/google', { token: tokenResponse.access_token });
                 login(res.data);
+                const userName = res.data.user.name || "User";
+                toast.success(`Hello, ${userName}`, { duration: 3000 });
                 router.push("/dashboard"); // Directly go to dashboard on login, skip password set
             } catch (error) {
                 console.error(error);
-                alert("Google Login Failed");
+                toast.error("Google Login Failed");
             }
         },
         onError: () => console.log('Login Failed'),
@@ -59,11 +64,13 @@ function LoginForm() {
         try {
             const response = await api.post('/auth/login', { email, password });
             login(response.data);
+            const userName = response.data.user.name || "User";
+            toast.success(`Hello, ${userName}`, { duration: 3000 });
             // Redirection handled by useEffect or could be done here immediately
         } catch (e: unknown) {
             console.error(e);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            alert((e as any).response?.data?.message || "Login failed");
+            toast.error((e as any).response?.data?.message || "Login failed");
         } finally {
             setLoading(false);
         }
@@ -74,6 +81,8 @@ function LoginForm() {
             title="Welcome Back"
             subtitle="Sign in to continue your journey with CodeDabba."
         >
+            {loading && <FullScreenLoader message="Signing in..." />}
+
             {/* Robot Assistant */}
             <div className="flex justify-center -mt-8">
                 <ResponsiveRobot focusedField={focusedField} />

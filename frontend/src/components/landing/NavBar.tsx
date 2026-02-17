@@ -4,13 +4,22 @@ import Link from "next/link";
 import { Code2, Github, Menu, X, Loader2, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
+import { FullScreenLoader } from "@/components/ui/full-screen-loader";
 
 export function NavBar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { user, isLoading, logout } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await logout();
+        setIsLoggingOut(false);
+    };
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
+            {isLoggingOut && <FullScreenLoader message="Signing out..." />}
             <div className="container mx-auto px-6 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 group">
                     <div className="p-2 rounded-lg bg-violet-600/10 border border-violet-500/20 group-hover:border-violet-500/50 transition-colors">
@@ -59,8 +68,9 @@ export function NavBar() {
                                 Dashboard
                             </Link>
                             <button
-                                onClick={() => logout()}
-                                className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                onClick={handleLogout}
+                                disabled={isLoggingOut}
+                                className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
                                 title="Logout"
                             >
                                 <LogOut className="w-5 h-5" />
@@ -114,8 +124,9 @@ export function NavBar() {
                                     Dashboard
                                 </Link>
                                 <button
-                                    onClick={() => logout()}
-                                    className="px-4 py-2 text-center text-sm font-medium text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    onClick={handleLogout}
+                                    disabled={isLoggingOut}
+                                    className="px-4 py-2 text-center text-sm font-medium text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     Logout
