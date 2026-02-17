@@ -8,6 +8,7 @@ import { AuthLayout } from "@/components/AuthLayout";
 import { Input } from "@/components/ui/input";
 import { ResponsiveRobot } from "@/components/ResponsiveRobot";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from 'react-hot-toast';
 
 function SetPasswordForm() {
     const { user, isLoading: authLoading } = useAuth();
@@ -30,24 +31,24 @@ function SetPasswordForm() {
         setLoading(true);
 
         if (password !== confirmPassword) {
-            alert("Passwords do not match!");
+            toast.error("Passwords do not match!");
             setLoading(false);
             return;
         }
 
         if (password.length < 6) {
-            alert("Password must be at least 6 characters!");
+            toast.error("Password must be at least 6 characters!");
             setLoading(false);
             return;
         }
 
         try {
             await api.post('/auth/set-password', { password });
-            alert("Password set successfully!");
+            toast.success("Password set successfully!");
             router.push("/dashboard");
         } catch (e: any) {
             console.error(e);
-            alert("Failed to set password: " + (e.response?.data?.message || "Unknown error"));
+            toast.error("Failed to set password: " + (e.response?.data?.message || "Unknown error"));
         } finally {
             setLoading(false);
         }

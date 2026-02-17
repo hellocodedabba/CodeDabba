@@ -7,6 +7,8 @@ import api from "@/lib/axios";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Loader2, Save, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from 'react-hot-toast';
 
 interface Chapter {
     id: string;
@@ -40,6 +42,11 @@ export default function CourseBuilderPage() {
     // Simple state for building structure first
     const [expandedModules, setExpandedModules] = useState<string[]>([]);
 
+    // Modal state
+    const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
+    const [newChapterTitle, setNewChapterTitle] = useState("");
+    const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+
     useEffect(() => {
         fetchCourse();
     }, [courseId]);
@@ -72,16 +79,22 @@ export default function CourseBuilderPage() {
         }
     };
 
-    const handleAddChapter = async (moduleId: string) => {
-        const title = prompt("Chapter Title:");
-        if (!title) return;
+    const handleAddChapterClick = (moduleId: string) => {
+        setActiveModuleId(moduleId);
+        setNewChapterTitle("");
+        setIsChapterModalOpen(true);
+    };
+
+    const handleConfirmAddChapter = async () => {
+        if (!newChapterTitle.trim() || !activeModuleId) return;
+
         try {
             // Find existing chapters count for order
-            const module = course?.modules.find(m => m.id === moduleId);
+            const module = course?.modules.find(m => m.id === activeModuleId);
             const orderIndex = module?.chapters.length || 0;
 
-            const { data } = await api.post(`/courses/modules/${moduleId}/chapters`, {
-                title,
+            const { data } = await api.post(`/courses/modules/${activeModuleId}/chapters`, {
+                title: newChapterTitle,
                 content: "# New Chapter\nStart writing...",
                 orderIndex
             });
@@ -92,12 +105,15 @@ export default function CourseBuilderPage() {
                 return {
                     ...prev,
                     modules: prev.modules.map(m =>
-                        m.id === moduleId ? { ...m, chapters: [...m.chapters, data] } : m
+                        m.id === activeModuleId ? { ...m, chapters: [...m.chapters, data] } : m
                     )
                 };
             });
+            setIsChapterModalOpen(false);
+            toast.success("Chapter added successfully");
         } catch (error) {
             console.error("Failed to add chapter", error);
+            toast.error("Failed to add chapter");
         }
     };
 
@@ -167,7 +183,7 @@ export default function CourseBuilderPage() {
                                                 </div>
                                             ))}
                                             <button
-                                                onClick={() => handleAddChapter(module.id)}
+                                                onClick={() => handleAddChapterClick(module.id)}
                                                 className="w-full py-2 text-sm text-zinc-500 hover:text-violet-400 border border-dashed border-zinc-800 hover:border-violet-500/30 rounded-lg flex items-center justify-center gap-2 transition-all"
                                             >
                                                 <Plus className="w-4 h-4" />
@@ -232,6 +248,40 @@ export default function CourseBuilderPage() {
                     </div>
                 </div>
             </div>
-        </ProtectedRoute>
+            <Dialog open={isChapterModalOpen} onOpenChange={setIsChapterModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Chapter</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <input
+                            autoFocus
+                            value={newChapterTitle}
+                            onChange={(e) => setNewChapterTitle(e.target.value)}
+                            placeholder="Chapter Title"
+                            className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleConfirmAddChapter();
+                            }}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <button
+                            onClick={() => setIsChapterModalOpen(false)}
+                            className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleConfirmAddChapter}
+                            disabled={!newChapterTitle.trim()}
+                            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg disabled:opacity-50 transition-colors"
+                        >
+                            Add Chapter
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </ProtectedRoute >
     );
 }

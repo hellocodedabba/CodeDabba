@@ -6,6 +6,7 @@ import { CheckCircle2, Send, Loader2, ArrowLeft } from "lucide-react";
 import api from "@/lib/axios";
 import Link from "next/link";
 import { NavBar } from "@/components/landing/NavBar";
+import { toast } from 'react-hot-toast';
 
 export default function MentorApplicationPage() {
     const [formData, setFormData] = useState({
@@ -36,7 +37,7 @@ export default function MentorApplicationPage() {
         try {
             await api.post('/otp/send', { email: formData.email, type: 'MENTOR_APPLICATION' });
             setOtpSent(true);
-            alert("OTP sent to your email!");
+            toast.success("OTP sent to your email!");
         } catch (err: any) {
             setError(err.response?.data?.message || "Failed to send OTP.");
         } finally {
@@ -52,7 +53,7 @@ export default function MentorApplicationPage() {
             const res = await api.post('/otp/verify', { email: formData.email, otp, type: 'MENTOR_APPLICATION' });
             if (res.data.valid) {
                 setOtpVerified(true);
-                alert("Email verified successfully!");
+                toast.success("Email verified successfully!");
             } else {
                 setError("Invalid OTP");
             }
