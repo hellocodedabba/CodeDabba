@@ -28,6 +28,8 @@ interface Course {
     id: string;
     title: string;
     modules: Module[];
+    status: 'draft' | 'under_review' | 'published' | 'rejected' | 'archived';
+    rejectReason?: string;
 }
 
 export default function CourseBuilderPage() {
@@ -125,6 +127,17 @@ export default function CourseBuilderPage() {
         }
     };
 
+    const handleSubmitForReview = async () => {
+        try {
+            await api.post(`/courses/${courseId}/submit`);
+            toast.success("Course submitted for review");
+            fetchCourse();
+        } catch (error) {
+            console.error("Failed to submit course", error);
+            toast.error("Failed to submit course");
+        }
+    };
+
     const toggleModule = (moduleId: string) => {
         setExpandedModules(prev =>
             prev.includes(moduleId) ? prev.filter(id => id !== moduleId) : [...prev, moduleId]
@@ -156,11 +169,42 @@ export default function CourseBuilderPage() {
                                 <p className="text-zinc-400 text-sm">Course Builder</p>
                             </div>
                         </div>
-                        <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2">
-                            <Save className="w-4 h-4" />
-                            Publish Course
-                        </button>
+                        <div className="flex gap-3">
+                            <div className="px-3 py-1 rounded-full text-xs font-medium border uppercase tracking-wider h-fit self-center"
+                                style={{
+                                    borderColor:
+                                        course.status === 'published' ? '#22c55e' :
+                                            course.status === 'rejected' ? '#ef4444' :
+                                                course.status === 'under_review' ? '#eab308' :
+                                                    '#71717a',
+                                    color:
+                                        course.status === 'published' ? '#22c55e' :
+                                            course.status === 'rejected' ? '#ef4444' :
+                                                course.status === 'under_review' ? '#eab308' :
+                                                    '#a1a1aa'
+                                }}
+                            >
+                                {course.status.replace('_', ' ')}
+                            </div>
+
+                            {course.status === 'draft' || course.status === 'rejected' ? (
+                                <button
+                                    onClick={handleSubmitForReview}
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    Submit for Review
+                                </button>
+                            ) : null}
+                        </div>
                     </div>
+
+                    {course.status === 'rejected' && course.rejectReason && (
+                        <div className="mb-8 p-4 bg-red-950/20 border border-red-900/50 rounded-xl text-red-200">
+                            <h3 className="font-semibold mb-1 text-red-400">Submission Rejected</h3>
+                            <p>{course.rejectReason}</p>
+                        </div>
+                    )}
 
                     <div className="grid lg:grid-cols-3 gap-8">
                         {/* Course Structure */}
@@ -194,50 +238,54 @@ export default function CourseBuilderPage() {
                                                     <span className="text-sm text-zinc-300 group-hover:text-white">{chapter.title}</span>
                                                 </div>
                                             ))}
-                                            <button
-                                                onClick={() => handleAddChapterClick(module.id)}
-                                                className="w-full py-2 text-sm text-zinc-500 hover:text-violet-400 border border-dashed border-zinc-800 hover:border-violet-500/30 rounded-lg flex items-center justify-center gap-2 transition-all"
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                                Add Chapter
-                                            </button>
+                                            {(course.status === 'draft' || course.status === 'rejected') && (
+                                                <button
+                                                    onClick={() => handleAddChapterClick(module.id)}
+                                                    className="w-full py-2 text-sm text-zinc-500 hover:text-violet-400 border border-dashed border-zinc-800 hover:border-violet-500/30 rounded-lg flex items-center justify-center gap-2 transition-all"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                    Add Chapter
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                             ))}
 
-                            {addingModule ? (
-                                <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
-                                    <input
-                                        autoFocus
-                                        value={newModuleTitle}
-                                        onChange={(e) => setNewModuleTitle(e.target.value)}
-                                        placeholder="Module Title"
-                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-violet-500 transition-colors"
-                                    />
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={handleAddModule}
-                                            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg"
-                                        >
-                                            Add
-                                        </button>
-                                        <button
-                                            onClick={() => setAddingModule(false)}
-                                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg"
-                                        >
-                                            Cancel
-                                        </button>
+                            {(course.status === 'draft' || course.status === 'rejected') && (
+                                addingModule ? (
+                                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
+                                        <input
+                                            autoFocus
+                                            value={newModuleTitle}
+                                            onChange={(e) => setNewModuleTitle(e.target.value)}
+                                            placeholder="Module Title"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-violet-500 transition-colors"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleAddModule}
+                                                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-lg"
+                                            >
+                                                Add
+                                            </button>
+                                            <button
+                                                onClick={() => setAddingModule(false)}
+                                                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => setAddingModule(true)}
-                                    className="w-full py-4 bg-zinc-900/30 border border-dashed border-zinc-800 hover:border-violet-500 hover:bg-violet-500/5 text-zinc-400 hover:text-violet-400 rounded-xl flex items-center justify-center gap-2 transition-all font-medium"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                    Add New Module
-                                </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setAddingModule(true)}
+                                        className="w-full py-4 bg-zinc-900/30 border border-dashed border-zinc-800 hover:border-violet-500 hover:bg-violet-500/5 text-zinc-400 hover:text-violet-400 rounded-xl flex items-center justify-center gap-2 transition-all font-medium"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        Add New Module
+                                    </button>
+                                )
                             )}
                         </div>
 

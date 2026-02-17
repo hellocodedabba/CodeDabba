@@ -20,6 +20,13 @@ export class CoursesController {
         return await this.coursesService.findAll(query);
     }
 
+    @Get('admin/all')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async findAllAdmin(@Query() query: any) {
+        return await this.coursesService.findAllAdmin(query);
+    }
+
     @Get('my-courses')
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
@@ -86,5 +93,32 @@ export class CoursesController {
     @Roles(Role.MENTOR, Role.ADMIN)
     async reorderBlocks(@Request() req: any, @Param('chapterId') chapterId: string, @Body() body: ReorderItemDto[]) {
         return await this.coursesService.reorderBlocks(req.user, chapterId, body);
+    }
+
+    @Post(':id/submit')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR)
+    async submit(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.submitForReview(req.user, id);
+    }
+
+    @Post(':id/approve')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async approve(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.approveCourse(req.user, id);
+    }
+
+    @Post(':id/reject')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async reject(@Request() req: any, @Param('id') id: string, @Body('reason') reason: string) {
+        return await this.coursesService.rejectCourse(req.user, id, reason);
+    }
+
+    @Post(':id/enroll')
+    @UseGuards(AuthGuard)
+    async enroll(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.enroll(req.user.id, id);
     }
 }

@@ -6,6 +6,7 @@ import { Module as CourseModule } from '../../entities/module.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { User, Role } from '../../entities/user.entity';
 import { MentorProfile } from '../../entities/mentor-profile.entity';
+import { Enrollment } from '../../entities/enrollment.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { CreateChapterDto } from './dto/create-chapter.dto';
@@ -27,6 +28,8 @@ export class CoursesService {
         private mentorProfileRepository: Repository<MentorProfile>,
         @InjectRepository(LessonBlock)
         private blocksRepository: Repository<LessonBlock>,
+        @InjectRepository(Enrollment)
+        private enrollmentsRepository: Repository<Enrollment>,
     ) {
         cloudinary.v2.config({
             cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -73,7 +76,7 @@ export class CoursesService {
     }
 
 
-    async findAll(query: any = {}): Promise<{ data: Course[], total: number, page: number, limit: number }> {
+    async findAll(query: any = {}, userId?: string): Promise<{ data: any[], total: number, page: number, limit: number }> {
         const { page = 1, limit = 10, search, category, level } = query;
         const skip = (page - 1) * limit;
 
@@ -97,18 +100,88 @@ export class CoursesService {
             take: limit,
         });
 
+        // If userId is provided, check enrollment for each course
+        const dataWithEnrollment = await Promise.all(data.map(async (course) => {
+            const isEnrolled = userId ? await this.enrollmentsRepository.findOne({
+                where: { courseId: course.id, userId }
+            }) : null;
+            return {
+                ...course,
+                isEnrolled: !!isEnrolled
+            };
+        }));
+
+        return { data: dataWithEnrollment, total, page: +page, limit: +limit };
+    }
+
+    async enroll(userId: string, courseId: string): Promise<Enrollment> {
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+
+        if (course.status !== CourseStatus.PUBLISHED) {
+            throw new BadRequestException('Course is not available for enrollment');
+        }
+
+        const existing = await this.enrollmentsRepository.findOne({
+            where: { userId, courseId }
+        });
+
+        if (existing) {
+            throw new ConflictException('Already enrolled in this course');
+        }
+
+        const enrollment = this.enrollmentsRepository.create({
+            userId,
+            courseId,
+            status: 'active' as any // Use existing enum value if available
+        });
+
+        return await this.enrollmentsRepository.save(enrollment);
+    }
+
+    async findAllAdmin(query: any = {}): Promise<{ data: Course[], total: number, page: number, limit: number }> {
+        const { page = 1, limit = 10, status } = query;
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        if (status) {
+            where.status = status;
+        }
+
+        const [data, total] = await this.coursesRepository.findAndCount({
+            where,
+            relations: ['mentor'],
+            order: { submittedAt: 'DESC', createdAt: 'DESC' },
+            skip,
+            take: limit,
+        });
+
         return { data, total, page: +page, limit: +limit };
     }
 
     async findOne(id: string): Promise<Course> {
         const course = await this.coursesRepository.findOne({
             where: { id },
-            relations: ['mentor', 'modules', 'modules.chapters'],
+            relations: [
+                'mentor',
+                'modules',
+                'modules.chapters',
+                'modules.chapters.blocks',
+                'modules.chapters.tasks',
+                'modules.chapters.tasks.options',
+                'modules.chapters.tasks.testCases',
+            ],
             order: {
                 modules: {
                     orderIndex: 'ASC',
                     chapters: {
                         orderIndex: 'ASC',
+                        blocks: {
+                            orderIndex: 'ASC'
+                        },
+                        tasks: {
+                            orderIndex: 'ASC'
+                        }
                     }
                 }
             }
@@ -133,8 +206,8 @@ export class CoursesService {
             throw new ForbiddenException('You can only add modules to your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.APPROVED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or approved status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
         }
 
         const existingModule = await this.modulesRepository.findOne({
@@ -162,8 +235,8 @@ export class CoursesService {
             throw new ForbiddenException('You can only add chapters to your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.APPROVED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or approved status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
         }
 
         const existingChapter = await this.chaptersRepository.findOne({
@@ -196,8 +269,8 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.APPROVED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or approved status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
         }
 
         const existingBlock = await this.blocksRepository.findOne({
@@ -224,8 +297,8 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.APPROVED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or approved status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
         }
 
         await this.modulesRepository.manager.transaction(async (transactionalEntityManager) => {
@@ -250,8 +323,8 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.APPROVED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or approved status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
         }
 
         await this.chaptersRepository.manager.transaction(async (transactionalEntityManager) => {
@@ -279,8 +352,8 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.APPROVED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or approved status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
         }
 
         await this.blocksRepository.manager.transaction(async (transactionalEntityManager) => {
@@ -294,6 +367,61 @@ export class CoursesService {
                 }
             }
         });
+    }
+
+    async submitForReview(user: User, courseId: string): Promise<Course> {
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+
+        if (course.mentorId !== user.id) {
+            throw new ForbiddenException('You can only submit your own courses');
+        }
+
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('Course can only be submitted from draft or rejected status');
+        }
+
+        course.status = CourseStatus.UNDER_REVIEW;
+        course.submittedAt = new Date();
+        return await this.coursesRepository.save(course);
+    }
+
+    async approveCourse(user: User, courseId: string): Promise<Course> {
+        if (user.role !== Role.ADMIN) {
+            throw new ForbiddenException('Only admins can approve courses');
+        }
+
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+
+        if (course.status !== CourseStatus.UNDER_REVIEW) {
+            throw new BadRequestException('Course is not under review');
+        }
+
+        course.status = CourseStatus.PUBLISHED;
+        course.publishedAt = new Date();
+        course.publishedBy = user;
+        course.visibility = CourseVisibility.PUBLIC; // Make it visible
+
+        return await this.coursesRepository.save(course);
+    }
+
+    async rejectCourse(user: User, courseId: string, reason: string): Promise<Course> {
+        if (user.role !== Role.ADMIN) {
+            throw new ForbiddenException('Only admins can reject courses');
+        }
+
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+
+        if (course.status !== CourseStatus.UNDER_REVIEW) {
+            throw new BadRequestException('Course is not under review');
+        }
+
+        course.status = CourseStatus.REJECTED;
+        course.rejectReason = reason;
+
+        return await this.coursesRepository.save(course);
     }
 
     async getUploadUrl(filename: string, contentType: string) {

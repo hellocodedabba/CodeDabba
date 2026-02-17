@@ -32,7 +32,7 @@ export default function AdminDashboard() {
         await logout();
         setIsLoggingOut(false);
     };
-    const [activeTab, setActiveTab] = useState<'overview' | 'applications'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'course_reviews'>('overview');
     const [applications, setApplications] = useState<MentorApplication[]>([]);
     const [loadingApps, setLoadingApps] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -111,6 +111,15 @@ export default function AdminDashboard() {
                         >
                             Mentor Applications
                         </button>
+                        <button
+                            onClick={() => setActiveTab('course_reviews')}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'course_reviews'
+                                ? 'border-pink-500 text-pink-400'
+                                : 'border-transparent text-zinc-400 hover:text-white'
+                                }`}
+                        >
+                            Course Reviews
+                        </button>
                     </div>
 
                     {activeTab === 'overview' ? (
@@ -128,7 +137,7 @@ export default function AdminDashboard() {
                                 <p className="text-sm text-emerald-400">All Systems Operational</p>
                             </div>
                         </div>
-                    ) : (
+                    ) : activeTab === 'applications' ? (
                         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
                             {loadingApps ? (
                                 <div className="p-12 flex justify-center">
@@ -210,11 +219,84 @@ export default function AdminDashboard() {
                                         </tbody>
                                     </table>
                                 </div>
-                            )}
+                            )
+                            }
+                        </div >
+                    ) : (
+                        <div className="space-y-6">
+                            <CourseReviewList />
                         </div>
-                    )}
-                </div>
+                    )}</div>
             </div>
         </ProtectedRoute>
     );
 }
+
+function CourseReviewList() {
+    const [courses, setCourses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
+
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const fetchCourses = async () => {
+        try {
+            const { data } = await api.get('/courses/admin/all?status=under_review');
+            setCourses(data.data);
+        } catch (error) {
+            console.error("Failed to fetch courses", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>;
+
+    if (courses.length === 0) return <div className="text-center p-12 text-zinc-500">No courses pending review.</div>;
+
+    return (
+        <div className="grid gap-6">
+            {courses.map((course) => (
+                <div key={course.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row gap-6 hover:border-pink-500/30 transition-colors">
+                    <div className="w-full md:w-48 aspect-video bg-zinc-800 rounded-lg overflow-hidden flex-shrink-0">
+                        {course.thumbnailUrl ? (
+                            <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-600">No Thumb</div>
+                        )}
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-1">{course.title}</h3>
+                                <p className="text-sm text-zinc-400">By <span className="text-pink-400">{course.mentor?.name}</span> • Submitted {new Date(course.submittedAt).toLocaleDateString()}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2 py-1 rounded bg-zinc-800 text-xs text-zinc-400 capitalize">{course.level}</span>
+                                <span className="px-2 py-1 rounded bg-pink-500/10 text-xs text-pink-400">{course.category}</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 text-sm text-zinc-500 mt-4">
+                            <div>Price: <span className="text-white">{course.accessType === 'free' ? 'Free' : `$${course.price}`}</span></div>
+                            <div>Access: <span className="text-white capitalize">{course.accessType}</span></div>
+                        </div>
+                    </div>
+                    <div className="flex md:flex-col justify-end gap-2">
+                        <Link
+                            href={`/admin/dashboard/courses/${course.id}`}
+                            className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white text-sm rounded-lg transition-colors text-center"
+                        >
+                            Review Course
+                        </Link>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+

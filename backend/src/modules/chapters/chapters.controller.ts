@@ -9,17 +9,24 @@ import { ReorderLessonBlockItemDto, ReorderLessonBlocksDto } from './dto/reorder
 import { ParseArrayPipe } from '@nestjs/common';
 
 @Controller('chapters')
-@UseGuards(AuthGuard, RolesGuard)
 export class ChaptersController {
     constructor(private readonly chaptersService: ChaptersService) { }
 
     @Get(':id')
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
     async findOne(@Request() req: any, @Param('id') id: string) {
-        return this.chaptersService.findOne(id, req.user.id);
+        return this.chaptersService.findOne(id, req.user);
+    }
+
+    @Get('content/:id')
+    // No RolesGuard here, allow student role too
+    async findContent(@Request() req: any, @Param('id') id: string) {
+        return this.chaptersService.getChapterContentForStudent(id, req.user?.id);
     }
 
     @Post(':id/blocks')
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
     async createBlock(
         @Request() req: any,
@@ -30,6 +37,7 @@ export class ChaptersController {
     }
 
     @Patch(':id/blocks/reorder')
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
     async reorderBlocks(
         @Request() req: any,
@@ -42,6 +50,7 @@ export class ChaptersController {
     }
 
     @Delete(':id/blocks/:blockId')
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
     async deleteBlock(
         @Request() req: any,
@@ -52,6 +61,7 @@ export class ChaptersController {
     }
 
     @Patch(':id/blocks/:blockId')
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
     async updateBlock(
         @Request() req: any,
@@ -62,6 +72,7 @@ export class ChaptersController {
         return this.chaptersService.updateBlock(id, blockId, body, req.user.id);
     }
     @Post('upload-signature')
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR, Role.ADMIN)
     async getUploadSignature(@Body() body: { folder: string }) {
         return this.chaptersService.getUploadSignature(body.folder);

@@ -11,11 +11,14 @@ interface Course {
     id: string;
     title: string;
     description: string;
-    thumbnailUrl?: string; // Assuming we get a URL or ID
+    thumbnailUrl?: string;
     mentor: { name: string };
     category: string;
     difficulty: string;
     createdAt: string;
+    accessType: 'free' | 'paid';
+    price: number;
+    isEnrolled?: boolean;
 }
 
 function CoursesContent() {
@@ -174,11 +177,27 @@ function CoursesContent() {
                                         <span className="text-sm text-zinc-400">{course.mentor.name}</span>
                                     </div>
                                     <span className={`text-xs px-2 py-1 rounded border ${course.difficulty === 'Beginner' ? 'border-green-500/20 text-green-400' :
-                                            course.difficulty === 'Intermediate' ? 'border-yellow-500/20 text-yellow-400' :
-                                                'border-red-500/20 text-red-400'
+                                        course.difficulty === 'Intermediate' ? 'border-yellow-500/20 text-yellow-400' :
+                                            'border-red-500/20 text-red-400'
                                         }`}>
                                         {course.difficulty}
                                     </span>
+                                </div>
+
+                                <div className="mt-6">
+                                    {course.isEnrolled ? (
+                                        <button className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-medium transition-colors">
+                                            Continue Learning
+                                        </button>
+                                    ) : course.accessType === 'free' ? (
+                                        <button className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors">
+                                            Start Learning
+                                        </button>
+                                    ) : (
+                                        <button className="w-full py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                                            Enroll • ${course.price}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </Link>

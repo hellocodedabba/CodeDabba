@@ -34,7 +34,9 @@ export class TasksService {
 
         const course = chapter.module.course;
         if (course.mentorId !== userId) throw new ForbiddenException('Not authorized');
-        if (course.status !== CourseStatus.DRAFT) throw new BadRequestException('Course must be in DRAFT mode');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to add tasks');
+        }
 
         const lastTask = await this.taskRepository.findOne({
             where: { chapterId },
@@ -69,6 +71,11 @@ export class TasksService {
         if (!task) throw new NotFoundException('Task not found');
         if (task.chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
+        const course = task.chapter.module.course;
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to edit tasks');
+        }
+
         // Handle nested updates manually if needed, or rely on cascade save if structured correctly.
         // For simplicity, we'll update the main task fields and recreate options/testCases if provided.
 
@@ -102,6 +109,11 @@ export class TasksService {
         if (!task) throw new NotFoundException('Task not found');
         if (task.chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
+        const course = task.chapter.module.course;
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to remove tasks');
+        }
+
         await this.taskRepository.delete(id);
     }
 
@@ -113,6 +125,11 @@ export class TasksService {
 
         if (!chapter) throw new NotFoundException('Chapter not found');
         if (chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
+
+        const course = chapter.module.course;
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to reorder tasks');
+        }
 
         await this.dataSource.transaction(async (manager) => {
             for (const item of items) {

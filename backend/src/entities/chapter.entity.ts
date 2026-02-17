@@ -16,6 +16,9 @@ export class Chapter {
     @Column({ default: 0 })
     points: number;
 
+    @Column({ default: false })
+    isFreePreview: boolean;
+
     @Column()
     moduleId: string;
 

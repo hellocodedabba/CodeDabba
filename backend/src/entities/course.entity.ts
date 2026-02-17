@@ -18,7 +18,6 @@ export enum CourseAccessType {
 export enum CourseStatus {
     DRAFT = 'draft',
     UNDER_REVIEW = 'under_review',
-    APPROVED = 'approved',
     PUBLISHED = 'published',
     REJECTED = 'rejected',
     ARCHIVED = 'archived',
@@ -94,6 +93,22 @@ export class Course {
     @ManyToOne(() => User, (user) => user.courses)
     @JoinColumn({ name: 'mentorId' })
     mentor: User;
+
+    @Column({ type: 'timestamp', nullable: true })
+    submittedAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    publishedAt: Date;
+
+    @Column({ nullable: true })
+    publishedById: string;
+
+    @ManyToOne(() => User, { nullable: true })
+    @JoinColumn({ name: 'publishedById' })
+    publishedBy: User;
+
+    @Column({ type: 'text', nullable: true })
+    rejectReason: string;
 
     @OneToMany(() => Module, (module) => module.course)
     modules: Module[];

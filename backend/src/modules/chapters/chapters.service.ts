@@ -1,10 +1,12 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chapter } from '../../entities/chapter.entity';
+import { Role } from '../../entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
 import { LessonBlock } from '../../entities/lesson-block.entity';
 import { CreateLessonBlockDto } from './dto/create-lesson-block.dto';
-import { CourseStatus } from '../../entities/course.entity';
+import { CourseStatus, Course } from '../../entities/course.entity';
+import { Enrollment } from '../../entities/enrollment.entity';
 import * as cloudinary from 'cloudinary';
 
 
@@ -40,8 +42,8 @@ export class ChaptersService {
             throw new ForbiddenException('You are not authorized to modify this course');
         }
 
-        if (course.status !== CourseStatus.DRAFT) {
-            throw new BadRequestException('You can only modify courses in DRAFT status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('You can only modify courses in DRAFT or REJECTED status');
         }
 
         const lastBlock = await this.lessonBlockRepository.findOne({
@@ -118,7 +120,7 @@ export class ChaptersService {
         // Soft delete
         await this.lessonBlockRepository.softDelete(blockId);
     }
-    async findOne(id: string, userId: string): Promise<Chapter> {
+    async findOne(id: string, user: any): Promise<Chapter> {
         const chapter = await this.chaptersRepository.findOne({
             where: { id },
             relations: ['blocks', 'module', 'module.course', 'tasks', 'tasks.options', 'tasks.testCases'],
@@ -138,16 +140,12 @@ export class ChaptersService {
 
         const course = chapter.module.course;
 
-        // Allow access if user is the mentor. 
-        // Admin access check is usually done via RolesGuard/User Role, but here we check ownership.
-        // If user is Admin, they might pass this check if we don't strict check userId.
-        // But for Mentor, strict check.
-        // If Role is ADMIN, maybe skip ownership? 
-        // For now, simple ownership check.
-        if (course.mentorId !== userId) {
-            // Need to check if user is admin. 
-            // Since we only pass userId, we can't check role here easily unless we pass User object.
-            // But let's assume strict ownership for now as per other methods.
+        // Allow access if user is the mentor or an admin.
+        if (user?.role === Role.ADMIN) {
+            return chapter;
+        }
+
+        if (course.mentorId !== user?.id) {
             throw new ForbiddenException('You are not authorized to view/edit this chapter');
         }
 
@@ -189,11 +187,59 @@ export class ChaptersService {
             throw new ForbiddenException('Not authorized');
         }
 
-        if (course.status !== CourseStatus.DRAFT) {
-            // throw new BadRequestException('You can only modify courses in DRAFT status');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
+            throw new BadRequestException('You can only modify courses in DRAFT or REJECTED status');
         }
 
         block.content = updateData.content;
         return this.lessonBlockRepository.save(block);
+    }
+
+    async getChapterContentForStudent(chapterId: string, userId?: string): Promise<Chapter> {
+        const chapter = await this.chaptersRepository.findOne({
+            where: { id: chapterId },
+            relations: ['blocks', 'module', 'module.course', 'tasks', 'tasks.options', 'tasks.testCases'],
+            order: {
+                blocks: {
+                    orderIndex: 'ASC',
+                },
+                tasks: {
+                    orderIndex: 'ASC',
+                },
+            },
+        });
+
+        if (!chapter) throw new NotFoundException('Chapter not found');
+
+        const course = chapter.module.course;
+
+        // Lesson Access Logic
+        if (course.accessType === 'free') {
+            return chapter; // Always allow free courses
+        }
+
+        if (chapter.isFreePreview) {
+            return chapter; // Allow free previews
+        }
+
+        if (!userId) {
+            throw new ForbiddenException('Identification required to access this content');
+        }
+
+        // Check if user is the mentor of the course
+        if (course.mentorId === userId) {
+            return chapter;
+        }
+
+        // Check enrollment
+        const isEnrolled = await this.dataSource.getRepository(Enrollment).findOne({
+            where: { courseId: course.id, userId, status: 'active' as any }
+        });
+
+        if (!isEnrolled) {
+            throw new ForbiddenException('You must be enrolled to access this content');
+        }
+
+        return chapter;
     }
 }
