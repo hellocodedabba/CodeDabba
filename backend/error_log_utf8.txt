@@ -1,0 +1,186 @@
+﻿
+> backend@0.0.1 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m5:13:31 pm[0m] Starting compilation in watch mode...
+
+[[90m5:13:35 pm[0m] Found 0 errors. Watching for file changes.
+
+[dotenv@17.3.1] injecting env (16) from .env -- tip: ≡ƒ¢í∩╕Å auth for agents: https://vestauth.com
+Main.ts environment check: { CLOUDINARY_CLOUD_NAME: 'dnqqock8h', ENV_LOADED: true }
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +11ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailerModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +3ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 43952  - [39m17/02/2026, 5:13:37 pm [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMailerCoreModule dependencies initialized[39m[38;5;3m +11ms[39m
+node.exe : [31m[Nest] 43952  - [39m17/02/2026, 5:13:41 
+pm [31m  ERROR[39m [38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect to the database. Retrying 
+(1)...[39m
+At C:\Program Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31m[Nest]  
+   439...ing (1)...[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+TypeORMError: Entity metadata for Chapter#tasks was not 
+found. Check if you specified a correct entity object and 
+if it's connected in the connection options.
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:1128:23)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.computeInverseProperties (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\metadata-b
+uilder\src\metadata-builder\EntityMetadataBuilder.ts:1118:
+34)
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:160:18)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.build (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\metadata-builder\src\metadata
+-builder\EntityMetadataBuilder.ts:159:25)
+    at ConnectionMetadataBuilder.buildEntityMetadatas (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\connection
+\src\connection\ConnectionMetadataBuilder.ts:106:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:105:5)
+    at async DataSource.buildMetadatas (C:\Users\USER\OneD
+rive\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDa
+bba\backend\node_modules\typeorm\data-source\src\data-sour
+ce\DataSource.ts:733:13)
+    at async DataSource.initialize (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\data-source\src\data-source\D
+ataSource.ts:264:13)
+[31m[Nest] 43952  - [39m17/02/2026, 5:13:46 pm [31m  
+ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to 
+connect to the database. Retrying (2)...[39m
+TypeORMError: Entity metadata for Chapter#tasks was not 
+found. Check if you specified a correct entity object and 
+if it's connected in the connection options.
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:1128:23)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.computeInverseProperties (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\metadata-b
+uilder\src\metadata-builder\EntityMetadataBuilder.ts:1118:
+34)
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:160:18)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.build (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\metadata-builder\src\metadata
+-builder\EntityMetadataBuilder.ts:159:25)
+    at ConnectionMetadataBuilder.buildEntityMetadatas (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\connection
+\src\connection\ConnectionMetadataBuilder.ts:106:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:105:5)
+    at async DataSource.buildMetadatas (C:\Users\USER\OneD
+rive\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDa
+bba\backend\node_modules\typeorm\data-source\src\data-sour
+ce\DataSource.ts:733:13)
+    at async DataSource.initialize (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\data-source\src\data-source\D
+ataSource.ts:264:13)
+[31m[Nest] 43952  - [39m17/02/2026, 5:13:52 pm [31m  
+ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to 
+connect to the database. Retrying (3)...[39m
+TypeORMError: Entity metadata for Chapter#tasks was not 
+found. Check if you specified a correct entity object and 
+if it's connected in the connection options.
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:1128:23)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.computeInverseProperties (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\metadata-b
+uilder\src\metadata-builder\EntityMetadataBuilder.ts:1118:
+34)
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:160:18)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.build (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\metadata-builder\src\metadata
+-builder\EntityMetadataBuilder.ts:159:25)
+    at ConnectionMetadataBuilder.buildEntityMetadatas (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\connection
+\src\connection\ConnectionMetadataBuilder.ts:106:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:105:5)
+    at async DataSource.buildMetadatas (C:\Users\USER\OneD
+rive\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDa
+bba\backend\node_modules\typeorm\data-source\src\data-sour
+ce\DataSource.ts:733:13)
+    at async DataSource.initialize (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\data-source\src\data-source\D
+ataSource.ts:264:13)
+[31m[Nest] 43952  - [39m17/02/2026, 5:13:58 pm [31m  
+ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to 
+connect to the database. Retrying (4)...[39m
+TypeORMError: Entity metadata for Chapter#tasks was not 
+found. Check if you specified a correct entity object and 
+if it's connected in the connection options.
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:1128:23)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.computeInverseProperties (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\metadata-b
+uilder\src\metadata-builder\EntityMetadataBuilder.ts:1118:
+34)
+    at <anonymous> (C:\Users\USER\OneDrive\Desktop\Project
+s\CodeDabba\CodeDabba_Website_1\CodeDabba\backend\node_mod
+ules\typeorm\metadata-builder\src\metadata-builder\EntityM
+etadataBuilder.ts:160:18)
+    at Array.forEach (<anonymous>)
+    at EntityMetadataBuilder.build (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\metadata-builder\src\metadata
+-builder\EntityMetadataBuilder.ts:159:25)
+    at ConnectionMetadataBuilder.buildEntityMetadatas (C:\
+Users\USER\OneDrive\Desktop\Projects\CodeDabba\CodeDabba_W
+ebsite_1\CodeDabba\backend\node_modules\typeorm\connection
+\src\connection\ConnectionMetadataBuilder.ts:106:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:105:5)
+    at async DataSource.buildMetadatas (C:\Users\USER\OneD
+rive\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDa
+bba\backend\node_modules\typeorm\data-source\src\data-sour
+ce\DataSource.ts:733:13)
+    at async DataSource.initialize (C:\Users\USER\OneDrive
+\Desktop\Projects\CodeDabba\CodeDabba_Website_1\CodeDabba\
+backend\node_modules\typeorm\data-source\src\data-source\D
+ataSource.ts:264:13)

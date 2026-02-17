@@ -32,18 +32,29 @@ interface MarkdownEditorProps {
     onSave: (value: string) => void;
     onCancel: () => void;
     onImageUpload: (file: File) => Promise<string>; // Returns URL
+    onChange?: (value: string) => void;
+    hideControls?: boolean;
 }
 
-export default function MarkdownEditor({ initialValue, onSave, onCancel, onImageUpload }: MarkdownEditorProps) {
+export default function MarkdownEditor({ initialValue, onSave, onCancel, onImageUpload, onChange, hideControls }: MarkdownEditorProps) {
     const [value, setValue] = useState(initialValue);
     const [previewMode, setPreviewMode] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setValue(newValue);
+        if (onChange) {
+            onChange(newValue);
+        }
+    };
+
     const handleInsert = (template: string, offset = 0) => {
         if (!textareaRef.current) return;
         const { value: newValue, cursor } = insertText(textareaRef.current, template, offset);
         setValue(newValue);
+        if (onChange) onChange(newValue);
         // Need to focus back and set cursor after render
         setTimeout(() => {
             if (textareaRef.current) {
@@ -125,7 +136,7 @@ export default function MarkdownEditor({ initialValue, onSave, onCancel, onImage
                     <textarea
                         ref={textareaRef}
                         value={value}
-                        onChange={(e) => setValue(e.target.value)}
+                        onChange={handleChange}
                         className="w-full h-full bg-transparent text-zinc-300 font-mono text-sm focus:outline-none resize-none"
                         placeholder="# Start writing your lesson content..."
                     />
@@ -133,21 +144,24 @@ export default function MarkdownEditor({ initialValue, onSave, onCancel, onImage
             </div>
 
             {/* Footer Actions */}
-            <div className="p-3 bg-zinc-900 border-t border-zinc-800 flex justify-end gap-2">
-                <button
-                    onClick={onCancel}
-                    className="px-3 py-1.5 text-zinc-400 hover:text-white text-sm hover:bg-zinc-800 rounded-md transition-colors"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={() => onSave(value)}
-                    className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-md transition-colors flex items-center gap-2"
-                >
-                    <Check className="w-4 h-4" />
-                    Save Changes
-                </button>
-            </div>
+            {!hideControls && (
+                <div className="p-3 bg-zinc-900 border-t border-zinc-800 flex justify-end gap-2">
+                    <button
+                        onClick={onCancel}
+                        className="px-3 py-1.5 text-zinc-400 hover:text-white text-sm hover:bg-zinc-800 rounded-md transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onSave(value)}
+                        className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-md transition-colors flex items-center gap-2"
+                    >
+                        <Check className="w-4 h-4" />
+                        Save Changes
+                    </button>
+                </div>
+            )}
+
 
             {/* Help Modal */}
             {showHelp && (

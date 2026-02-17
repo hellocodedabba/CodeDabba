@@ -121,9 +121,12 @@ export class ChaptersService {
     async findOne(id: string, userId: string): Promise<Chapter> {
         const chapter = await this.chaptersRepository.findOne({
             where: { id },
-            relations: ['blocks', 'module', 'module.course'],
+            relations: ['blocks', 'module', 'module.course', 'tasks', 'tasks.options', 'tasks.testCases'],
             order: {
                 blocks: {
+                    orderIndex: 'ASC',
+                },
+                tasks: {
                     orderIndex: 'ASC',
                 },
             },

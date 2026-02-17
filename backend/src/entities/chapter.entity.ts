@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Module } from './module.entity';
 import { Submission } from './submission.entity';
 import { LessonBlock } from './lesson-block.entity';
+import { Task } from './task.entity';
 
 @Entity()
 @Index(['moduleId', 'orderIndex'], { unique: true })
@@ -30,6 +31,9 @@ export class Chapter {
 
     @OneToMany(() => Submission, (submission) => submission.chapter)
     submissions: Submission[];
+
+    @OneToMany(() => Task, (task) => task.chapter, { cascade: true })
+    tasks: Task[];
 
     @CreateDateColumn()
     createdAt: Date;
