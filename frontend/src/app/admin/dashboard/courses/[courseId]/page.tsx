@@ -10,6 +10,7 @@ import { NavBar } from "@/components/landing/NavBar";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "react-hot-toast";
+import TaskPreview from "@/components/TaskPreview";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface Course {
@@ -41,6 +42,8 @@ export default function CourseReviewPage() {
     const [rejectReason, setRejectReason] = useState("");
 
     const [expandedModules, setExpandedModules] = useState<string[]>([]);
+    const [expandedChapters, setExpandedChapters] = useState<string[]>([]);
+    const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
 
     useEffect(() => {
         fetchCourse();
@@ -52,6 +55,8 @@ export default function CourseReviewPage() {
             setCourse(data);
             if (data.modules) {
                 setExpandedModules(data.modules.map((m: any) => m.id));
+                const allChapterIds = data.modules.flatMap((m: any) => m.chapters?.map((c: any) => c.id) || []);
+                setExpandedChapters(allChapterIds);
             }
         } catch (error) {
             console.error("Failed to fetch course", error);
@@ -120,6 +125,18 @@ export default function CourseReviewPage() {
         );
     };
 
+    const toggleChapter = (chapterId: string) => {
+        setExpandedChapters(prev =>
+            prev.includes(chapterId) ? prev.filter(id => id !== chapterId) : [...prev, chapterId]
+        );
+    };
+
+    const toggleTask = (taskId: string) => {
+        setExpandedTasks(prev =>
+            prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+        );
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center text-white">
@@ -131,6 +148,7 @@ export default function CourseReviewPage() {
     if (!course) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Course not found</div>;
 
     const reviewPhaseLabel = isCurriculumReview ? "Phase 1: Curriculum Review" : isContentReview ? "Phase 2: Content Review" : "Listing Details";
+    const submissionTime = isCurriculumReview ? (course as any).submittedCurriculumAt : isContentReview ? (course as any).submittedContentAt : (course as any).submittedAt || course.submittedAt;
 
     return (
         <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -158,7 +176,7 @@ export default function CourseReviewPage() {
                             </Link>
                             <div>
                                 <h1 className="text-3xl font-bold">{course.title}</h1>
-                                <p className="text-zinc-400">Review Submission • Submitted by {course.mentor.name} on {new Date(course.submittedAt).toLocaleString()}</p>
+                                <p className="text-zinc-400">Review Submission • Submitted by {course.mentor.name} {submissionTime ? `on ${new Date(submissionTime).toLocaleString()}` : ''}</p>
                             </div>
                         </div>
 
@@ -255,19 +273,34 @@ export default function CourseReviewPage() {
                                                 <div className="p-4 space-y-4 bg-black/20">
                                                     {module.chapters?.map((chapter: any) => (
                                                         <div key={chapter.id} className="p-4 bg-zinc-950/50 border border-zinc-800 rounded-lg">
-                                                            <div className="flex items-center gap-3 mb-4">
-                                                                <FileText className="w-4 h-4 text-zinc-500" />
-                                                                <h4 className="font-medium text-zinc-200">{chapter.title}</h4>
-                                                                {chapter.isFreePreview && (
-                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20">
-                                                                        Free Preview
-                                                                    </span>
-                                                                )}
+                                                            <div
+                                                                className="flex items-center justify-between cursor-pointer group"
+                                                                onClick={() => toggleChapter(chapter.id)}
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    {expandedChapters.includes(chapter.id) ? (
+                                                                        <ChevronDown className="w-4 h-4 text-zinc-500" />
+                                                                    ) : (
+                                                                        <ChevronRight className="w-4 h-4 text-zinc-500" />
+                                                                    )}
+                                                                    <FileText className="w-4 h-4 text-zinc-500" />
+                                                                    <h4 className="font-medium text-zinc-200 group-hover:text-white transition-colors">{chapter.title}</h4>
+                                                                    {chapter.isFreePreview && (
+                                                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20">
+                                                                            Free Preview
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-tighter">
+                                                                    {chapter.blocks?.length || 0} Blocks • {chapter.tasks?.length || 0} Tasks
+                                                                </span>
                                                             </div>
 
-                                                            {/* Lesson Blocks (Only show detailed preview in Content Review or if items exist) */}
-                                                            {(isContentReview || (chapter.blocks?.length > 0)) && (
-                                                                <div className="pl-7 space-y-6">
+                                                            {/* Lesson Content (Only show if expanded) */}
+                                                            {expandedChapters.includes(chapter.id) && (
+                                                                <div className="mt-6 pl-7 space-y-6">
+                                                                    {/* Chapter Description if any? (Not in schema but good to have) */}
+
                                                                     {chapter.blocks?.map((block: any) => {
                                                                         const cleanContent = (['image', 'video', 'file'].includes(block.type) && block.content && block.content.indexOf('http') > 0)
                                                                             ? block.content.substring(block.content.indexOf('http'))
@@ -324,7 +357,10 @@ export default function CourseReviewPage() {
                                                                             <div className="space-y-4">
                                                                                 {chapter.tasks?.map((task: any) => (
                                                                                     <div key={task.id} className="bg-zinc-950/30 border border-zinc-800 rounded-xl overflow-hidden">
-                                                                                        <div className="p-4 bg-zinc-900/50 flex items-start gap-3 border-b border-zinc-800/50">
+                                                                                        <div
+                                                                                            className="p-4 bg-zinc-900/50 flex items-start gap-3 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+                                                                                            onClick={() => toggleTask(task.id)}
+                                                                                        >
                                                                                             {task.type === 'CODING' ? (
                                                                                                 <div className="bg-blue-500/10 p-2 rounded-lg text-blue-400 border border-blue-500/20">
                                                                                                     <Code className="w-4 h-4" />
@@ -336,14 +372,24 @@ export default function CourseReviewPage() {
                                                                                             )}
                                                                                             <div className="flex-1">
                                                                                                 <div className="flex justify-between items-start">
-                                                                                                    <h4 className="font-semibold text-zinc-200">{task.title}</h4>
+                                                                                                    <div className="flex items-center gap-2">
+                                                                                                        <h4 className="font-semibold text-zinc-200">{task.title}</h4>
+                                                                                                        {expandedTasks.includes(task.id) ? (
+                                                                                                            <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                                                                                        ) : (
+                                                                                                            <ChevronRight className="w-3 h-3 text-zinc-500" />
+                                                                                                        )}
+                                                                                                    </div>
                                                                                                     <span className="text-xs font-mono bg-zinc-900 border border-zinc-800 px-2 py-1 rounded text-zinc-400">
                                                                                                         {task.points} pts
                                                                                                     </span>
                                                                                                 </div>
-                                                                                                <div className="mt-2 text-sm text-zinc-400 prose prose-invert prose-sm max-w-none">
-                                                                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{task.problemStatement}</ReactMarkdown>
-                                                                                                </div>
+
+                                                                                                {expandedTasks.includes(task.id) && (
+                                                                                                    <div className="mt-4 pt-4 border-t border-zinc-800/50">
+                                                                                                        <TaskPreview task={task as any} showResults={true} />
+                                                                                                    </div>
+                                                                                                )}
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
@@ -452,3 +498,4 @@ export default function CourseReviewPage() {
         </ProtectedRoute>
     );
 }
+

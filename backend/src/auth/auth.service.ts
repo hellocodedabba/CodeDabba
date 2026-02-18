@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../modules/users/dto/create-user.dto';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { OAuth2Client } from 'google-auth-library';
+import { HackathonsService } from '../modules/hackathons/hackathons.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
         private jwtService: JwtService,
         @InjectRepository(RefreshToken)
         private refreshTokenRepository: Repository<RefreshToken>,
+        private readonly hackathonsService: HackathonsService,
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -37,6 +39,7 @@ export class AuthService {
 
     async register(createUserDto: CreateUserDto) {
         const user = await this.usersService.createUser(createUserDto);
+        await this.hackathonsService.syncInvitations(user.id, user.email);
         const tokens = await this.getTokens(user.id, user.email, user.role);
         await this.updateRefreshToken(user.id, tokens.refresh_token);
         return {
@@ -148,6 +151,8 @@ export class AuthService {
             await this.usersService.updateGoogleId(user.id, googleId);
             user.googleId = googleId;
         }
+
+        await this.hackathonsService.syncInvitations(user.id, user.email);
 
         const tokens = await this.getTokens(user.id, user.email, user.role);
         await this.updateRefreshToken(user.id, tokens.refresh_token);

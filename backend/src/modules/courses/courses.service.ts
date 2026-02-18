@@ -70,7 +70,7 @@ export class CoursesService {
             ...createCourseDto,
             slug,
             mentorId: user.id,
-            status: CourseStatus.DRAFT,
+            status: CourseStatus.DRAFT_CURRICULUM,
             version: 1,
             visibility: CourseVisibility.PRIVATE,
         });
@@ -181,7 +181,7 @@ export class CoursesService {
         const [data, total] = await this.coursesRepository.findAndCount({
             where,
             relations: ['mentor'],
-            order: { submittedAt: 'DESC', createdAt: 'DESC' },
+            order: { submittedCurriculumAt: 'DESC', createdAt: 'DESC' },
             skip,
             take: limit,
         });
@@ -241,6 +241,21 @@ export class CoursesService {
                     };
                 }
             }
+        }
+
+
+        // Secure content: If not enrolled, strip blocks and tasks from non-free chapters
+        if (!isEnrolled) {
+            course.modules.forEach(module => {
+                if (module.chapters) {
+                    module.chapters.forEach(chapter => {
+                        if (!chapter.isFreePreview) {
+                            chapter.blocks = [];
+                            chapter.tasks = [];
+                        }
+                    });
+                }
+            });
         }
 
         return { ...course, isEnrolled, progress };
@@ -307,10 +322,15 @@ export class CoursesService {
             throw new ForbiddenException('You can only add modules to your own courses');
         }
 
-        // Phase 1 Editing: Structure
-        const allowedStructureEditStatuses = [CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED];
-        if (!allowedStructureEditStatuses.includes(course.status)) {
-            throw new ForbiddenException('Cannot modify curriculum structure in current status. Curriculum must be in DRAFT or REJECTED state.');
+        // Structural Change Logic
+        if ([CourseStatus.CURRICULUM_UNDER_REVIEW, CourseStatus.CONTENT_UNDER_REVIEW, CourseStatus.PUBLISHED].includes(course.status)) {
+            throw new ForbiddenException(`Cannot add modules while course is ${course.status.replace(/_/g, ' ')}.`);
+        }
+
+        // If structure changes after curriculum is approved/content is drafted -> Reset to curriculum draft
+        if ([CourseStatus.CURRICULUM_APPROVED, CourseStatus.CONTENT_DRAFT].includes(course.status)) {
+            course.status = CourseStatus.DRAFT_CURRICULUM;
+            await this.coursesRepository.save(course);
         }
 
         const existingModule = await this.modulesRepository.findOne({
@@ -338,15 +358,15 @@ export class CoursesService {
             throw new ForbiddenException('You can only add chapters to your own courses');
         }
 
-        // Phase 1 Editing: Structure (Chapters are structure)
-        const allowedStructureEditStatuses = [CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED];
-        // Note: Adding chapters might be restricted in Phase 2? "No structure changes" in Phase 1 review.
-        // In Phase 2, can mentor add chapters? "Mentor can now start building internal lesson content."
-        // Usually, curriculum is fixed after approval. Let's strictly follow "No structure changes" rule implying structure is set.
-        // If they need to change structure, they probably need to revert or request stricture change.
-        // For now, restrict to DRAFT/CURR_REJECTED.
-        if (!allowedStructureEditStatuses.includes(course.status)) {
-            throw new ForbiddenException('Cannot modify curriculum structure (chapters) after curriculum approval.');
+        // Structural Change Logic
+        if ([CourseStatus.CURRICULUM_UNDER_REVIEW, CourseStatus.CONTENT_UNDER_REVIEW, CourseStatus.PUBLISHED].includes(course.status)) {
+            throw new ForbiddenException(`Cannot add chapters while course is ${course.status.replace(/_/g, ' ')}.`);
+        }
+
+        // Reset to curriculum draft if modifying structure after approval
+        if ([CourseStatus.CURRICULUM_APPROVED, CourseStatus.CONTENT_DRAFT].includes(course.status)) {
+            course.status = CourseStatus.DRAFT_CURRICULUM;
+            await this.coursesRepository.save(course);
         }
 
         const existingChapter = await this.chaptersRepository.findOne({
@@ -381,14 +401,10 @@ export class CoursesService {
         }
 
         // Phase 2 Editing: Content
-        const allowedContentEditStatuses = [
-            CourseStatus.CURRICULUM_APPROVED,
-            CourseStatus.CONTENT_DRAFT,
-            CourseStatus.CONTENT_REJECTED
-        ];
+        const lockedStatuses = [CourseStatus.DRAFT_CURRICULUM, CourseStatus.CURRICULUM_UNDER_REVIEW, CourseStatus.CONTENT_UNDER_REVIEW, CourseStatus.PUBLISHED];
 
-        if (!allowedContentEditStatuses.includes(course.status)) {
-            throw new ForbiddenException('Cannot edit content. Curriculum must be approved first, or content must be in draft/rejected state.');
+        if (lockedStatuses.includes(course.status)) {
+            throw new ForbiddenException(`Cannot edit content while course is ${course.status.replace(/_/g, ' ')}.`);
         }
 
         // Auto-transition to CONTENT_DRAFT if currently CURRICULUM_APPROVED
@@ -421,8 +437,14 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if ([CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
-            throw new ForbiddenException('Cannot reorder modules after curriculum approval');
+        if ([CourseStatus.CURRICULUM_UNDER_REVIEW, CourseStatus.CONTENT_UNDER_REVIEW, CourseStatus.PUBLISHED].includes(course.status)) {
+            throw new ForbiddenException(`Cannot reorder modules while course is ${course.status.replace(/_/g, ' ')}.`);
+        }
+
+        // Reset to curriculum draft if modifying structure after approval
+        if ([CourseStatus.CURRICULUM_APPROVED, CourseStatus.CONTENT_DRAFT].includes(course.status)) {
+            course.status = CourseStatus.DRAFT_CURRICULUM;
+            await this.coursesRepository.save(course);
         }
 
         await this.modulesRepository.manager.transaction(async (transactionalEntityManager) => {
@@ -447,8 +469,14 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if ([CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
-            throw new ForbiddenException('Cannot reorder chapters after curriculum approval');
+        if ([CourseStatus.CURRICULUM_UNDER_REVIEW, CourseStatus.CONTENT_UNDER_REVIEW, CourseStatus.PUBLISHED].includes(course.status)) {
+            throw new ForbiddenException(`Cannot reorder chapters while course is ${course.status.replace(/_/g, ' ')}.`);
+        }
+
+        // Reset to curriculum draft if modifying structure after approval
+        if ([CourseStatus.CURRICULUM_APPROVED, CourseStatus.CONTENT_DRAFT].includes(course.status)) {
+            course.status = CourseStatus.DRAFT_CURRICULUM;
+            await this.coursesRepository.save(course);
         }
 
         await this.chaptersRepository.manager.transaction(async (transactionalEntityManager) => {
@@ -512,17 +540,17 @@ export class CoursesService {
         if (!course) throw new NotFoundException('Course not found');
         if (course.mentorId !== user.id) throw new ForbiddenException('Not your course');
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.CURRICULUM_REJECTED) {
-            throw new BadRequestException('Can only submit curriculum from DRAFT or CURRICULUM_REJECTED status');
+        if (course.status !== CourseStatus.DRAFT_CURRICULUM) {
+            throw new BadRequestException('Can only submit curriculum from DRAFT CURRICULUM status');
         }
 
         course.status = CourseStatus.CURRICULUM_UNDER_REVIEW;
-        course.submittedAt = new Date();
+        course.submittedCurriculumAt = new Date();
         return await this.coursesRepository.save(course);
     }
 
     async approveCurriculum(user: User, courseId: string): Promise<Course> {
-        if (user.role !== Role.ADMIN) throw new ForbiddenException('Admin only'); // Should use Guard, but double check
+        if (user.role !== Role.ADMIN) throw new ForbiddenException('Admin only');
 
         const course = await this.coursesRepository.findOne({ where: { id: courseId } });
         if (!course) throw new NotFoundException('Course not found');
@@ -532,7 +560,7 @@ export class CoursesService {
         }
 
         course.status = CourseStatus.CURRICULUM_APPROVED;
-        // Reset rejection reason if any
+        course.curriculumReviewedAt = new Date();
         course.rejectReason = null;
         return await this.coursesRepository.save(course);
     }
@@ -547,7 +575,7 @@ export class CoursesService {
             throw new BadRequestException('Course curriculum is not under review');
         }
 
-        course.status = CourseStatus.CURRICULUM_REJECTED;
+        course.status = CourseStatus.DRAFT_CURRICULUM;
         course.rejectReason = reason;
         return await this.coursesRepository.save(course);
     }
@@ -559,15 +587,12 @@ export class CoursesService {
         if (!course) throw new NotFoundException('Course not found');
         if (course.mentorId !== user.id) throw new ForbiddenException('Not your course');
 
-        // Can submit if Approved (no content added yet technically but possible) or Content Draft or Content Rejected
-        const allowedStatuses = [CourseStatus.CURRICULUM_APPROVED, CourseStatus.CONTENT_DRAFT, CourseStatus.CONTENT_REJECTED];
-        if (!allowedStatuses.includes(course.status)) {
-            throw new BadRequestException('Cannot submit content. Curriculum must be approved first.');
+        if (course.status !== CourseStatus.CONTENT_DRAFT) {
+            throw new BadRequestException('Can only submit content from CONTENT DRAFT status');
         }
 
         course.status = CourseStatus.CONTENT_UNDER_REVIEW;
-        // Maybe update submittedAt?
-        course.submittedAt = new Date();
+        course.submittedContentAt = new Date();
         return await this.coursesRepository.save(course);
     }
 
@@ -583,7 +608,8 @@ export class CoursesService {
 
         course.status = CourseStatus.PUBLISHED;
         course.publishedAt = new Date();
-        course.publishedBy = user;
+        course.contentReviewedAt = new Date();
+        course.publishedById = user.id;
         course.visibility = CourseVisibility.PUBLIC;
         course.rejectReason = null;
 
@@ -600,7 +626,7 @@ export class CoursesService {
             throw new BadRequestException('Course content is not under review');
         }
 
-        course.status = CourseStatus.CONTENT_REJECTED;
+        course.status = CourseStatus.CONTENT_DRAFT;
         course.rejectReason = reason;
         return await this.coursesRepository.save(course);
     }
@@ -622,7 +648,7 @@ export class CoursesService {
         // Allowed in DRAFT/CURR_REJECTED. 
         // Should it be allowed later? "Free preview flags" are listed in Phase 1. 
         // Let's restrict to Phase 1 for now to force curriculum correctness.
-        if ([CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
+        if ([CourseStatus.DRAFT_CURRICULUM, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
             // Maybe allow admin to toggle later? Or mentor in next version?
             // For now adhere to Phase 1.
             throw new ForbiddenException('Cannot change free preview flags after curriculum approval');

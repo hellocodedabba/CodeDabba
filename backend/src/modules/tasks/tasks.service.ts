@@ -36,14 +36,15 @@ export class TasksService {
         const course = chapter.module.course;
         if (course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
-        const allowedStatuses = [
-            CourseStatus.CURRICULUM_APPROVED,
-            CourseStatus.CONTENT_DRAFT,
-            CourseStatus.CONTENT_REJECTED
+        const lockedStatuses = [
+            CourseStatus.DRAFT_CURRICULUM,
+            CourseStatus.CURRICULUM_UNDER_REVIEW,
+            CourseStatus.CONTENT_UNDER_REVIEW,
+            CourseStatus.PUBLISHED
         ];
 
-        if (!allowedStatuses.includes(course.status)) {
-            throw new BadRequestException('Cannot add tasks. content must be in draft/rejected state or curriculum approved.');
+        if (lockedStatuses.includes(course.status)) {
+            throw new BadRequestException(`Cannot add tasks while course is ${course.status.replace(/_/g, ' ')}.`);
         }
 
         if (course.status === CourseStatus.CURRICULUM_APPROVED) {
@@ -85,14 +86,15 @@ export class TasksService {
         if (task.chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
         const course = task.chapter.module.course;
-        const allowedStatuses = [
-            CourseStatus.CURRICULUM_APPROVED,
-            CourseStatus.CONTENT_DRAFT,
-            CourseStatus.CONTENT_REJECTED
+        const lockedStatuses = [
+            CourseStatus.DRAFT_CURRICULUM,
+            CourseStatus.CURRICULUM_UNDER_REVIEW,
+            CourseStatus.CONTENT_UNDER_REVIEW,
+            CourseStatus.PUBLISHED
         ];
 
-        if (!allowedStatuses.includes(course.status)) {
-            throw new BadRequestException('Cannot edit tasks in current status');
+        if (lockedStatuses.includes(course.status)) {
+            throw new BadRequestException(`Cannot edit tasks while course is ${course.status.replace(/_/g, ' ')}.`);
         }
 
         if (course.status === CourseStatus.CURRICULUM_APPROVED) {
@@ -134,14 +136,15 @@ export class TasksService {
         if (task.chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
         const course = task.chapter.module.course;
-        const allowedStatuses = [
-            CourseStatus.CURRICULUM_APPROVED,
-            CourseStatus.CONTENT_DRAFT,
-            CourseStatus.CONTENT_REJECTED
+        const lockedStatuses = [
+            CourseStatus.DRAFT_CURRICULUM,
+            CourseStatus.CURRICULUM_UNDER_REVIEW,
+            CourseStatus.CONTENT_UNDER_REVIEW,
+            CourseStatus.PUBLISHED
         ];
 
-        if (!allowedStatuses.includes(course.status)) {
-            throw new BadRequestException('Cannot remove tasks in current status');
+        if (lockedStatuses.includes(course.status)) {
+            throw new BadRequestException(`Cannot remove tasks while course is ${course.status.replace(/_/g, ' ')}.`);
         }
 
         if (course.status === CourseStatus.CURRICULUM_APPROVED) {
@@ -162,14 +165,15 @@ export class TasksService {
         if (chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
         const course = chapter.module.course;
-        const allowedStatuses = [
-            CourseStatus.CURRICULUM_APPROVED,
-            CourseStatus.CONTENT_DRAFT,
-            CourseStatus.CONTENT_REJECTED
+        const lockedStatuses = [
+            CourseStatus.DRAFT_CURRICULUM,
+            CourseStatus.CURRICULUM_UNDER_REVIEW,
+            CourseStatus.CONTENT_UNDER_REVIEW,
+            CourseStatus.PUBLISHED
         ];
 
-        if (!allowedStatuses.includes(course.status)) {
-            throw new BadRequestException('Cannot reorder tasks in current status');
+        if (lockedStatuses.includes(course.status)) {
+            throw new BadRequestException(`Cannot reorder tasks while course is ${course.status.replace(/_/g, ' ')}.`);
         }
 
         if (course.status === CourseStatus.CURRICULUM_APPROVED) {

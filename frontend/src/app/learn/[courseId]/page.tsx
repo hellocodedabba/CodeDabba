@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/axios";
-import { ArrowLeft, Menu, CheckCircle, Circle, PlayCircle, Loader2, Video, FileText, Download, Code, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Menu, CheckCircle, Circle, PlayCircle, Loader2, Video, FileText, Download, Code, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "react-hot-toast";
+import TaskPreview from "@/components/TaskPreview";
 
 interface LessonBlock {
     id: string;
@@ -233,19 +234,21 @@ export default function LearnPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Progress Bar in Header */}
-                    <div className="hidden md:flex flex-col w-48 gap-1">
-                        <div className="flex justify-between text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
-                            <span>Progress</span>
-                            <span>{course.progress?.percentage || 0}%</span>
+                    {/* Progress Bar in Header - Only if Enrolled */}
+                    {course.isEnrolled && (
+                        <div className="hidden md:flex flex-col w-48 gap-1">
+                            <div className="flex justify-between text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                                <span>Progress</span>
+                                <span>{course.progress?.percentage || 0}%</span>
+                            </div>
+                            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-green-500 transition-all duration-300"
+                                    style={{ width: `${course.progress?.percentage || 0}%` }}
+                                ></div>
+                            </div>
                         </div>
-                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-green-500 transition-all duration-300"
-                                style={{ width: `${course.progress?.percentage || 0}%` }}
-                            ></div>
-                        </div>
-                    </div>
+                    )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 md:hidden"
@@ -300,6 +303,8 @@ export default function LearnPage() {
                                                 <div className="shrink-0">
                                                     {course.progress?.completedChapterIds?.includes(chapter.id) ? (
                                                         <CheckCircle className="w-4 h-4 text-green-500" />
+                                                    ) : !course.isEnrolled && !chapter.isFreePreview ? (
+                                                        <Lock className="w-4 h-4 text-zinc-600" />
                                                     ) : chapter.id === currentChapter?.id ? (
                                                         <PlayCircle className="w-4 h-4" />
                                                     ) : (
@@ -412,31 +417,7 @@ export default function LearnPage() {
                                         </h3>
                                         <div className="space-y-6">
                                             {currentChapter.tasks.map((task) => (
-                                                <div key={task.id} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden p-6">
-                                                    <div className="flex justify-between items-start mb-4">
-                                                        <div>
-                                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase tracking-wider mb-2 ${task.type === 'CODING' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'}`}>
-                                                                {task.type} Challenge
-                                                            </span>
-                                                            <h4 className="text-xl font-bold text-white">{task.title}</h4>
-                                                        </div>
-                                                        <div className="text-sm font-mono text-zinc-500 bg-black/50 px-3 py-1 rounded border border-zinc-800">
-                                                            {task.points} pts
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="prose prose-invert prose-sm max-w-none text-zinc-400 mb-6">
-                                                        <ReactMarkdown>{task.problemStatement}</ReactMarkdown>
-                                                    </div>
-
-                                                    {/* Interactive placeholder for tasks - since we don't have submission system yet */}
-                                                    <div className="bg-black/50 border border-zinc-800 rounded-xl p-8 text-center">
-                                                        <p className="text-zinc-500 italic mb-4">Task submission system coming soon.</p>
-                                                        <button disabled className="px-6 py-2 bg-zinc-800 text-zinc-500 rounded-lg cursor-not-allowed">
-                                                            Start Assignment
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                <TaskPreview key={task.id} task={task as any} />
                                             ))}
                                         </div>
                                     </div>

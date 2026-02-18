@@ -30,11 +30,11 @@ export function NavBar() {
 
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-8">
-                    <Link href="#features" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-                        Features
+                    <Link href="/courses" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                        Courses
                     </Link>
-                    <Link href="#blogs" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-                        Community
+                    <Link href="/hackathons" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                        Hackathons
                     </Link>
                     <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
                         Pricing
@@ -106,13 +106,15 @@ export function NavBar() {
             {/* Mobile Menu */}
             {isMenuOpen && (
                 <div className="md:hidden absolute top-16 left-0 right-0 bg-zinc-900 border-b border-white/5 p-4 flex flex-col gap-4">
-                    <Link href="#features" className="text-sm font-medium text-zinc-400 hover:text-white">
-                        Features
+                    <Link href="/courses" className="text-sm font-medium text-zinc-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>
+                        Courses
                     </Link>
-                    <Link href="#blogs" className="text-sm font-medium text-zinc-400 hover:text-white">
-                        Community
+                    <Link href="/hackathons" className="text-sm font-medium text-zinc-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>
+                        Hackathons
                     </Link>
-                    <hr className="border-white/5" />
+                    <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>
+                        Pricing
+                    </Link>
                     <div className="flex flex-col gap-2">
                         {isLoading ? (
                             <div className="w-full flex justify-center py-2">

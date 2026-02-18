@@ -10,24 +10,6 @@ import { OtpController } from './otp.controller';
 @Module({
     imports: [
         TypeOrmModule.forFeature([Otp]),
-        MailerModule.forRootAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: async (configService: ConfigService) => ({
-                transport: {
-                    host: configService.get('MAIL_HOST'), // e.g., smtp.gmail.com
-                    port: 587,
-                    secure: false, // true for 465, false for other ports
-                    auth: {
-                        user: configService.get('MAIL_USER'),
-                        pass: configService.get('MAIL_PASSWORD'),
-                    },
-                },
-                defaults: {
-                    from: `"CodeDabba" <${configService.get('MAIL_FROM')}>`,
-                },
-            }),
-        }),
     ],
     controllers: [OtpController],
     providers: [OtpService],

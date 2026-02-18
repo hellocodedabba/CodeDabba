@@ -52,10 +52,10 @@ export function HeroSection() {
                             <ArrowRight className="w-5 h-5" />
                         </Link>
                         <Link
-                            href="#features"
+                            href="/courses"
                             className="px-8 py-4 text-lg font-bold text-zinc-300 border border-zinc-700 bg-zinc-900/50 backdrop-blur-sm rounded-2xl hover:bg-zinc-800 transition-all hover:text-white flex items-center justify-center"
                         >
-                            Explore Features
+                            Browse Courses
                         </Link>
                     </div>
                     <div className="mt-4 text-sm text-zinc-500 text-center lg:text-left">

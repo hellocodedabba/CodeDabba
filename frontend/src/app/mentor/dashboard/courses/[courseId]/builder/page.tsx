@@ -231,7 +231,7 @@ export default function CourseBuilderPage() {
                 <div className="container mx-auto px-6 py-24">
                     <div className="flex justify-between items-center mb-8">
                         <div className="flex items-center gap-4">
-                            <Link href="/mentor/dashboard/courses" className="text-zinc-400 hover:text-white transition-colors">
+                            <Link href="/mentor/dashboard" className="text-zinc-400 hover:text-white transition-colors">
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
                             <div>
@@ -307,8 +307,8 @@ export default function CourseBuilderPage() {
                                                     key={chapter.id}
                                                     onClick={() => handleChapterClick(chapter.id)}
                                                     className={`flex items-center justify-between p-3 bg-zinc-950/50 rounded-lg border border-zinc-800 group transition-all ${isPhase1Editable
-                                                            ? 'opacity-75 hover:opacity-100 cursor-not-allowed'
-                                                            : 'hover:border-violet-500/30 cursor-pointer'
+                                                        ? 'opacity-75 hover:opacity-100 cursor-not-allowed'
+                                                        : 'hover:border-violet-500/30 cursor-pointer'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-3">

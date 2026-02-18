@@ -177,9 +177,10 @@ export default function TaskEditor({ initialTask, onSave, onCancel }: TaskEditor
                             <MarkdownEditor
                                 initialValue={task.problemStatement}
                                 onSave={(val) => setTask({ ...task, problemStatement: val })}
+                                onChange={(val) => setTask({ ...task, problemStatement: val })}
                                 onCancel={() => { }} // No strict cancel needed inside here
                                 onImageUpload={async (file) => ""} // TODO: implement if needed
-                                hideControls={true} // Maybe custom prop to hide save/cancel buttons in editor if we want to use parent save
+                                hideControls={true}
                             />
                         </div>
                         {/* Note: MarkdownEditor currently has its own Save button. We might need to refactor it or just use the onChange prop if we add one. 

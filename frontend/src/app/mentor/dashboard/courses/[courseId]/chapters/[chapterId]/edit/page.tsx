@@ -12,7 +12,8 @@ import MarkdownEditor from "@/components/MarkdownEditor";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import TaskEditor, { Task } from "@/components/TaskEditor";
-import { Code, CheckCircle } from "lucide-react";
+import { Code, CheckCircle, CheckCircle2 } from "lucide-react";
+import TaskPreview from "@/components/TaskPreview";
 
 // Interfaces
 interface LessonBlock {
@@ -358,26 +359,9 @@ export default function ChapterEditPage() {
                                 {tasks.length > 0 && (
                                     <div className="mt-12 border-t border-zinc-800 pt-8">
                                         <h2 className="text-xl font-bold mb-6 text-white">Review Tasks</h2>
-                                        <div className="space-y-4">
+                                        <div className="space-y-6">
                                             {tasks.map(task => (
-                                                <div key={task.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                                                    <div className="flex items-start gap-4">
-                                                        <div className={`p-3 rounded-lg ${task.type === 'CODING' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'}`}>
-                                                            {task.type === 'CODING' ? <Code className="w-6 h-6" /> : <CheckCircle className="w-6 h-6" />}
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-xs font-medium px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">{task.type}</span>
-                                                                {task.isRequired && <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-500/10 text-red-400">Required</span>}
-                                                                <span className="text-xs text-zinc-500">{task.points} pts</span>
-                                                            </div>
-                                                            <h3 className="text-lg font-semibold text-white mb-2">{task.title}</h3>
-                                                            <div className="prose prose-invert prose-sm max-w-none text-zinc-400">
-                                                                <ReactMarkdown>{task.problemStatement}</ReactMarkdown>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <TaskPreview key={task.id} task={task as any} showResults={true} />
                                             ))}
                                         </div>
                                     </div>

@@ -98,9 +98,9 @@ export default function CreateCoursePage() {
             <div className="min-h-screen bg-black text-white">
                 <NavBar />
                 <div className="container mx-auto px-6 py-24">
-                    <Link href="/mentor/dashboard/courses" className="inline-flex items-center text-zinc-400 hover:text-white mb-8 transition-colors">
+                    <Link href="/mentor/dashboard" className="inline-flex items-center text-zinc-400 hover:text-white mb-8 transition-colors">
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Courses
+                        Back to HQ
                     </Link>
 
                     <div className="max-w-xl mx-auto">

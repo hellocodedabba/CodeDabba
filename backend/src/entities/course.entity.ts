@@ -17,6 +17,7 @@ export enum CourseAccessType {
 
 export enum CourseStatus {
     DRAFT = 'draft',
+    DRAFT_CURRICULUM = 'draft_curriculum',
     CURRICULUM_UNDER_REVIEW = 'curriculum_under_review',
     CURRICULUM_REJECTED = 'curriculum_rejected',
     CURRICULUM_APPROVED = 'curriculum_approved',
@@ -24,6 +25,7 @@ export enum CourseStatus {
     CONTENT_UNDER_REVIEW = 'content_under_review',
     CONTENT_REJECTED = 'content_rejected',
     PUBLISHED = 'published',
+    REJECTED = 'rejected',
     ARCHIVED = 'archived',
 }
 
@@ -74,7 +76,7 @@ export class Course {
     @Column({
         type: 'enum',
         enum: CourseStatus,
-        default: CourseStatus.DRAFT
+        default: CourseStatus.DRAFT_CURRICULUM
     })
     status: CourseStatus;
 
@@ -99,7 +101,16 @@ export class Course {
     mentor: User;
 
     @Column({ type: 'timestamp', nullable: true })
-    submittedAt: Date;
+    submittedCurriculumAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    curriculumReviewedAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    submittedContentAt: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    contentReviewedAt: Date;
 
     @Column({ type: 'timestamp', nullable: true })
     publishedAt: Date;

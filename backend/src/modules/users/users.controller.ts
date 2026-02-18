@@ -36,5 +36,12 @@ export class UsersController {
     create(@Body() createUserDto: CreateUserDto) {
         return this.usersService.createUser(createUserDto);
     }
+
+    @Get('mentors')
+    @UseGuards(AuthGuard('jwt'), RolesGuard)
+    @Roles(Role.ADMIN)
+    findAllMentors() {
+        return this.usersService.findByRole(Role.MENTOR);
+    }
 }
 

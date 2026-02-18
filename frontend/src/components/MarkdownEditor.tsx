@@ -2,12 +2,12 @@
 
 import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm"; // Tables, strikethrough, etc.
-// import rehypeHighlight from "rehype-highlight"; // Syntax highlighting
+import remarkGfm from "remark-gfm";
 import {
     Bold, Italic, List, ListOrdered, Link as LinkIcon, Image as ImageIcon,
     Code, Quote, GripHorizontal, HelpCircle, X, Check, Eye, Edit3, Heading1, Heading2
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 // Helper to insert text at cursor position
 const insertText = (
@@ -28,33 +28,36 @@ const insertText = (
 };
 
 interface MarkdownEditorProps {
-    initialValue: string;
-    onSave: (value: string) => void;
-    onCancel: () => void;
-    onImageUpload: (file: File) => Promise<string>; // Returns URL
+    initialValue?: string;
+    value?: string;
+    onSave?: (value: string) => void;
+    onCancel?: () => void;
+    onImageUpload?: (file: File) => Promise<string>; // Returns URL
     onChange?: (value: string) => void;
     hideControls?: boolean;
+    placeholder?: string;
 }
 
-export default function MarkdownEditor({ initialValue, onSave, onCancel, onImageUpload, onChange, hideControls }: MarkdownEditorProps) {
-    const [value, setValue] = useState(initialValue);
+export default function MarkdownEditor({ initialValue = "", value: controlledValue, onSave, onCancel, onImageUpload, onChange, hideControls, placeholder }: MarkdownEditorProps) {
+    const [internalValue, setInternalValue] = useState(initialValue);
+    const value = controlledValue !== undefined ? controlledValue : internalValue;
+    const setValue = (val: string) => {
+        if (controlledValue === undefined) setInternalValue(val);
+        if (onChange) onChange(val);
+    };
+
     const [previewMode, setPreviewMode] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newValue = e.target.value;
-        setValue(newValue);
-        if (onChange) {
-            onChange(newValue);
-        }
+        setValue(e.target.value);
     };
 
     const handleInsert = (template: string, offset = 0) => {
         if (!textareaRef.current) return;
         const { value: newValue, cursor } = insertText(textareaRef.current, template, offset);
         setValue(newValue);
-        if (onChange) onChange(newValue);
         // Need to focus back and set cursor after render
         setTimeout(() => {
             if (textareaRef.current) {
@@ -65,6 +68,10 @@ export default function MarkdownEditor({ initialValue, onSave, onCancel, onImage
     };
 
     const handleImageClick = () => {
+        if (!onImageUpload) {
+            toast.error("Image upload not configured");
+            return;
+        }
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*";
@@ -76,7 +83,7 @@ export default function MarkdownEditor({ initialValue, onSave, onCancel, onImage
                     handleInsert(`![Alt text](${url})`, 0);
                 } catch (err) {
                     console.error("Image upload failed", err);
-                    alert("Failed to upload image.");
+                    toast.error("Failed to upload image.");
                 }
             }
         };
@@ -138,27 +145,31 @@ export default function MarkdownEditor({ initialValue, onSave, onCancel, onImage
                         value={value}
                         onChange={handleChange}
                         className="w-full h-full bg-transparent text-zinc-300 font-mono text-sm focus:outline-none resize-none"
-                        placeholder="# Start writing your lesson content..."
+                        placeholder={placeholder || "# Start writing text..."}
                     />
                 )}
             </div>
 
             {/* Footer Actions */}
-            {!hideControls && (
+            {!hideControls && (onSave || onCancel) && (
                 <div className="p-3 bg-zinc-900 border-t border-zinc-800 flex justify-end gap-2">
-                    <button
-                        onClick={onCancel}
-                        className="px-3 py-1.5 text-zinc-400 hover:text-white text-sm hover:bg-zinc-800 rounded-md transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={() => onSave(value)}
-                        className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-md transition-colors flex items-center gap-2"
-                    >
-                        <Check className="w-4 h-4" />
-                        Save Changes
-                    </button>
+                    {onCancel && (
+                        <button
+                            onClick={onCancel}
+                            className="px-3 py-1.5 text-zinc-400 hover:text-white text-sm hover:bg-zinc-800 rounded-md transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    )}
+                    {onSave && (
+                        <button
+                            onClick={() => onSave(value)}
+                            className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm rounded-md transition-colors flex items-center gap-2"
+                        >
+                            <Check className="w-4 h-4" />
+                            Save Changes
+                        </button>
+                    )}
                 </div>
             )}
 

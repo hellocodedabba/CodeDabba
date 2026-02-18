@@ -14,7 +14,7 @@ interface Course {
     thumbnailUrl?: string;
     mentor: { name: string };
     category: string;
-    difficulty: string;
+    level: string;
     createdAt: string;
     accessType: 'free' | 'paid';
     price: number;
@@ -32,12 +32,12 @@ function CoursesContent() {
     // Filters
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
-    const difficulty = searchParams.get("difficulty") || "";
+    const level = searchParams.get("level") || "";
     const page = Number(searchParams.get("page")) || 1;
 
     useEffect(() => {
         fetchCourses();
-    }, [search, category, difficulty, page]);
+    }, [search, category, level, page]);
 
     const fetchCourses = async () => {
         setLoading(true);
@@ -47,7 +47,7 @@ function CoursesContent() {
                 limit: "9",
                 search,
                 category,
-                difficulty
+                level
             });
             const { data } = await api.get(`/courses?${query.toString()}`);
             setCourses(data.data);
@@ -114,14 +114,14 @@ function CoursesContent() {
                         <option value="Data Science">Data Science</option>
                     </select>
                     <select
-                        value={difficulty}
-                        onChange={(e) => updateParams({ difficulty: e.target.value, page: 1 })}
+                        value={level}
+                        onChange={(e) => updateParams({ level: e.target.value, page: 1 })}
                         className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-300 focus:outline-none focus:border-violet-500 cursor-pointer"
                     >
                         <option value="">All Levels</option>
-                        <option value="Beginner">Beginner</option>
-                        <option value="Intermediate">Intermediate</option>
-                        <option value="Advanced">Advanced</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
                     </select>
                 </div>
             </div>
@@ -176,11 +176,11 @@ function CoursesContent() {
                                         </div>
                                         <span className="text-sm text-zinc-400">{course.mentor.name}</span>
                                     </div>
-                                    <span className={`text-xs px-2 py-1 rounded border ${course.difficulty === 'Beginner' ? 'border-green-500/20 text-green-400' :
-                                        course.difficulty === 'Intermediate' ? 'border-yellow-500/20 text-yellow-400' :
+                                    <span className={`text-xs px-2 py-1 rounded border capitalize ${course.level === 'beginner' ? 'border-green-500/20 text-green-400' :
+                                        course.level === 'intermediate' ? 'border-yellow-500/20 text-yellow-400' :
                                             'border-red-500/20 text-red-400'
                                         }`}>
-                                        {course.difficulty}
+                                        {course.level}
                                     </span>
                                 </div>
 

@@ -50,7 +50,7 @@ export default function LandingPage() {
                         <div>
                             <h4 className="font-bold text-white mb-4">Platform</h4>
                             <ul className="space-y-2 text-sm text-zinc-400">
-                                <li><Link href="#" className="hover:text-white transition-colors">Courses</Link></li>
+                                <li><Link href="/courses" className="hover:text-white transition-colors">Courses</Link></li>
                                 <li><Link href="#" className="hover:text-white transition-colors">Mentorship</Link></li>
                                 <li><Link href="#" className="hover:text-white transition-colors">Pricing</Link></li>
                             </ul>

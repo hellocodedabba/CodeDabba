@@ -59,4 +59,8 @@ export class UsersService {
         user.password = hashedPassword;
         return this.usersRepository.save(user);
     }
+
+    async findByRole(role: any): Promise<User[]> {
+        return this.usersRepository.find({ where: { role } });
+    }
 }
