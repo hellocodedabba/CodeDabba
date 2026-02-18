@@ -8,6 +8,8 @@ import api from "@/lib/axios";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { toast } from 'react-hot-toast';
 import { FullScreenLoader } from "@/components/ui/full-screen-loader";
+import { useRouter } from "next/navigation"; // Correct import placement
+import Link from "next/link"; // Correct import placement
 
 interface MentorApplication {
     id: string;
@@ -32,7 +34,7 @@ export default function AdminDashboard() {
         await logout();
         setIsLoggingOut(false);
     };
-    const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'course_reviews'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'curriculum_reviews'>('overview');
     const [applications, setApplications] = useState<MentorApplication[]>([]);
     const [loadingApps, setLoadingApps] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -112,13 +114,13 @@ export default function AdminDashboard() {
                             Mentor Applications
                         </button>
                         <button
-                            onClick={() => setActiveTab('course_reviews')}
-                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'course_reviews'
+                            onClick={() => setActiveTab('curriculum_reviews')}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'curriculum_reviews'
                                 ? 'border-pink-500 text-pink-400'
                                 : 'border-transparent text-zinc-400 hover:text-white'
                                 }`}
                         >
-                            Course Reviews
+                            Curriculum Reviews
                         </button>
                     </div>
 
@@ -243,7 +245,8 @@ function CourseReviewList() {
 
     const fetchCourses = async () => {
         try {
-            const { data } = await api.get('/courses/admin/all?status=under_review');
+            // Fetch only courses pending curriculum review
+            const { data } = await api.get('/courses/admin/all?status=curriculum_under_review');
             setCourses(data.data);
         } catch (error) {
             console.error("Failed to fetch courses", error);
@@ -254,10 +257,11 @@ function CourseReviewList() {
 
     if (loading) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>;
 
-    if (courses.length === 0) return <div className="text-center p-12 text-zinc-500">No courses pending review.</div>;
+    if (courses.length === 0) return <div className="text-center p-12 text-zinc-500">No courses pending curriculum review.</div>;
 
     return (
         <div className="grid gap-6">
+            <h2 className="text-xl font-bold px-1 text-zinc-300">Pending Curriculum Approvals</h2>
             {courses.map((course) => (
                 <div key={course.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row gap-6 hover:border-pink-500/30 transition-colors">
                     <div className="w-full md:w-48 aspect-video bg-zinc-800 rounded-lg overflow-hidden flex-shrink-0">
@@ -281,6 +285,9 @@ function CourseReviewList() {
                         <div className="flex gap-4 text-sm text-zinc-500 mt-4">
                             <div>Price: <span className="text-white">{course.accessType === 'free' ? 'Free' : `$${course.price}`}</span></div>
                             <div>Access: <span className="text-white capitalize">{course.accessType}</span></div>
+                            <div className="bg-yellow-500/10 text-yellow-500 px-2 rounded border border-yellow-500/20 text-xs flex items-center">
+                                Curriculum Review
+                            </div>
                         </div>
                     </div>
                     <div className="flex md:flex-col justify-end gap-2">
@@ -288,7 +295,7 @@ function CourseReviewList() {
                             href={`/admin/dashboard/courses/${course.id}`}
                             className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white text-sm rounded-lg transition-colors text-center"
                         >
-                            Review Course
+                            Review Curriculum
                         </Link>
                     </div>
                 </div>
@@ -296,7 +303,3 @@ function CourseReviewList() {
         </div>
     );
 }
-
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-

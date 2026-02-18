@@ -9,6 +9,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../entities/user.entity';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CreateBlockDto } from './dto/create-block.dto';
+import { OptionalAuthGuard } from '../../common/guards/optional-auth.guard';
 
 
 @Controller('courses')
@@ -16,8 +17,9 @@ export class CoursesController {
     constructor(private readonly coursesService: CoursesService) { }
 
     @Get()
-    async findAll(@Query() query: any) {
-        return await this.coursesService.findAll(query);
+    @UseGuards(OptionalAuthGuard)
+    async findAll(@Request() req: any, @Query() query: any) {
+        return await this.coursesService.findAll(query, req.user?.id);
     }
 
     @Get('admin/all')
@@ -25,6 +27,13 @@ export class CoursesController {
     @Roles(Role.ADMIN)
     async findAllAdmin(@Query() query: any) {
         return await this.coursesService.findAllAdmin(query);
+    }
+
+    @Get('enrolled')
+    @UseGuards(AuthGuard)
+    async getEnrolledCourses(@Request() req: any) {
+        // We'll implement this service method next
+        return await this.coursesService.findEnrolledCourses(req.user.id);
     }
 
     @Get('my-courses')
@@ -35,8 +44,9 @@ export class CoursesController {
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string) {
-        return await this.coursesService.findOne(id);
+    @UseGuards(OptionalAuthGuard)
+    async findOne(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.findOne(id, req.user?.id);
     }
     @Post('upload-thumbnail')
     @UseGuards(AuthGuard, RolesGuard)
@@ -95,30 +105,65 @@ export class CoursesController {
         return await this.coursesService.reorderBlocks(req.user, chapterId, body);
     }
 
-    @Post(':id/submit')
+    @Patch('chapters/:chapterId/free')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR, Role.ADMIN)
+    async toggleChapterFreeStatus(@Request() req: any, @Param('chapterId') chapterId: string, @Body() body: { isFreePreview: boolean }) {
+        // Enforce boolean if not done automatically
+        return await this.coursesService.toggleChapterFreeStatus(req.user, chapterId, !!body.isFreePreview);
+    }
+
+    @Post(':id/submit-curriculum')
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.MENTOR)
-    async submit(@Request() req: any, @Param('id') id: string) {
-        return await this.coursesService.submitForReview(req.user, id);
+    async submitCurriculum(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.submitCurriculum(req.user, id);
     }
 
-    @Post(':id/approve')
+    @Post(':id/approve-curriculum')
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
-    async approve(@Request() req: any, @Param('id') id: string) {
-        return await this.coursesService.approveCourse(req.user, id);
+    async approveCurriculum(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.approveCurriculum(req.user, id);
     }
 
-    @Post(':id/reject')
+    @Post(':id/reject-curriculum')
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
-    async reject(@Request() req: any, @Param('id') id: string, @Body('reason') reason: string) {
-        return await this.coursesService.rejectCourse(req.user, id, reason);
+    async rejectCurriculum(@Request() req: any, @Param('id') id: string, @Body('reason') reason: string) {
+        return await this.coursesService.rejectCurriculum(req.user, id, reason);
+    }
+
+    @Post(':id/submit-content')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR)
+    async submitContent(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.submitContent(req.user, id);
+    }
+
+    @Post(':id/approve-content')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async approveContent(@Request() req: any, @Param('id') id: string) {
+        return await this.coursesService.approveContent(req.user, id);
+    }
+
+    @Post(':id/reject-content')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async rejectContent(@Request() req: any, @Param('id') id: string, @Body('reason') reason: string) {
+        return await this.coursesService.rejectContent(req.user, id, reason);
     }
 
     @Post(':id/enroll')
     @UseGuards(AuthGuard)
     async enroll(@Request() req: any, @Param('id') id: string) {
-        return await this.coursesService.enroll(req.user.id, id);
+        return await this.coursesService.enroll(req.user, id);
+    }
+
+    @Post(':id/chapters/:chapterId/complete')
+    @UseGuards(AuthGuard)
+    async completeChapter(@Request() req: any, @Param('id') courseId: string, @Param('chapterId') chapterId: string) {
+        return await this.coursesService.completeChapter(req.user, courseId, chapterId);
     }
 }

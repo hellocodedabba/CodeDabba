@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, Not, In } from 'typeorm';
 import { Course, CourseStatus, CourseVisibility, CourseAccessType } from '../../entities/course.entity';
 import { Module as CourseModule } from '../../entities/module.entity';
 import { Chapter } from '../../entities/chapter.entity';
@@ -14,6 +14,7 @@ import { ReorderItemDto } from './dto/reorder.dto';
 import * as cloudinary from 'cloudinary';
 import { LessonBlock } from '../../entities/lesson-block.entity';
 import { CreateBlockDto } from './dto/create-block.dto';
+import { Progress } from '../../entities/progress.entity';
 
 @Injectable()
 export class CoursesService {
@@ -30,6 +31,8 @@ export class CoursesService {
         private blocksRepository: Repository<LessonBlock>,
         @InjectRepository(Enrollment)
         private enrollmentsRepository: Repository<Enrollment>,
+        @InjectRepository(Progress)
+        private progressRepository: Repository<Progress>,
     ) {
         cloudinary.v2.config({
             cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -115,7 +118,10 @@ export class CoursesService {
     }
 
     async enroll(userId: string, courseId: string): Promise<Enrollment> {
-        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        const course = await this.coursesRepository.findOne({
+            where: { id: courseId },
+            relations: ['modules', 'modules.chapters']
+        });
         if (!course) throw new NotFoundException('Course not found');
 
         if (course.status !== CourseStatus.PUBLISHED) {
@@ -136,7 +142,31 @@ export class CoursesService {
             status: 'active' as any // Use existing enum value if available
         });
 
-        return await this.enrollmentsRepository.save(enrollment);
+        await this.enrollmentsRepository.save(enrollment);
+
+        // Initialize Progress
+        // Find first chapter
+        let firstChapterId: string | undefined = undefined;
+        if (course.modules && course.modules.length > 0) {
+            const sortedModules = course.modules.sort((a, b) => a.orderIndex - b.orderIndex);
+            const firstModule = sortedModules[0];
+            if (firstModule.chapters && firstModule.chapters.length > 0) {
+                const sortedChapters = firstModule.chapters.sort((a, b) => a.orderIndex - b.orderIndex);
+                firstChapterId = sortedChapters[0].id;
+            }
+        }
+
+        const progress = this.progressRepository.create({
+            userId,
+            courseId,
+            currentChapterId: firstChapterId,
+            completedLessonsCount: 0,
+            totalPoints: 0
+        });
+
+        await this.progressRepository.save(progress);
+
+        return enrollment;
     }
 
     async findAllAdmin(query: any = {}): Promise<{ data: Course[], total: number, page: number, limit: number }> {
@@ -159,7 +189,7 @@ export class CoursesService {
         return { data, total, page: +page, limit: +limit };
     }
 
-    async findOne(id: string): Promise<Course> {
+    async findOne(id: string, userId?: string): Promise<any> {
         const course = await this.coursesRepository.findOne({
             where: { id },
             relations: [
@@ -186,8 +216,79 @@ export class CoursesService {
                 }
             }
         });
+
         if (!course) throw new NotFoundException('Course not found');
-        return course;
+
+        let isEnrolled = false;
+        let progress: any = null;
+
+        if (userId) {
+            const enrollment = await this.enrollmentsRepository.findOne({
+                where: { userId, courseId: id }
+            });
+            isEnrolled = !!enrollment;
+
+            if (isEnrolled) {
+                const prog = await this.progressRepository.findOne({ where: { userId, courseId: id } });
+                if (prog) {
+                    const totalChapters = await this.getCourseTotalChapters(id);
+                    const percentage = totalChapters > 0 ? Math.round((prog.completedLessonsCount / totalChapters) * 100) : 0;
+
+                    progress = {
+                        percentage: Math.min(100, Math.max(0, percentage)),
+                        currentChapterId: prog.currentChapterId,
+                        completedChapterIds: prog.completedChapterIds || []
+                    };
+                }
+            }
+        }
+
+        return { ...course, isEnrolled, progress };
+    }
+
+    async findEnrolledCourses(userId: string) {
+        const enrollments = await this.enrollmentsRepository.find({
+            where: { userId },
+            relations: ['course', 'course.mentor'],
+            order: { createdAt: 'DESC' }
+        });
+
+        const coursesWithProgress = await Promise.all(enrollments.map(async (enrollment) => {
+            const course = enrollment.course;
+            const progress = await this.progressRepository.findOne({
+                where: { userId, courseId: course.id }
+            });
+
+            // Calculate progress percentage
+            // Need total lessons count. 
+            // We could fetch course with relations, or just count.
+            // For now, let's fetch shallow course stats or rely on what we have.
+            // Since we didn't fetch deep relations for course in enrollments query, we might need a separate count query or careful loading.
+
+            // To be efficient, we might want to store totalLessons in Course or Progress.
+            // For now, let's fetch Module/Chapter counts.
+            const totalModules = await this.modulesRepository.count({ where: { courseId: course.id } });
+            // This is rough. Total chapters is better.
+            const totalChapters = await this.chaptersRepository.count({
+                where: { module: { courseId: course.id } },
+                relations: ['module']
+            });
+
+            const percentage = totalChapters > 0 ? Math.round((progress?.completedLessonsCount || 0) / totalChapters * 100) : 0;
+
+            return {
+                ...course,
+                enrolledAt: enrollment.createdAt,
+                progress: {
+                    percentage,
+                    completedLessons: progress?.completedLessonsCount || 0,
+                    totalLessons: totalChapters,
+                    currentChapterId: progress?.currentChapterId
+                }
+            };
+        }));
+
+        return coursesWithProgress;
     }
 
     async findMyCourses(user: User): Promise<Course[]> {
@@ -206,8 +307,10 @@ export class CoursesService {
             throw new ForbiddenException('You can only add modules to your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
+        // Phase 1 Editing: Structure
+        const allowedStructureEditStatuses = [CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED];
+        if (!allowedStructureEditStatuses.includes(course.status)) {
+            throw new ForbiddenException('Cannot modify curriculum structure in current status. Curriculum must be in DRAFT or REJECTED state.');
         }
 
         const existingModule = await this.modulesRepository.findOne({
@@ -235,8 +338,15 @@ export class CoursesService {
             throw new ForbiddenException('You can only add chapters to your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
+        // Phase 1 Editing: Structure (Chapters are structure)
+        const allowedStructureEditStatuses = [CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED];
+        // Note: Adding chapters might be restricted in Phase 2? "No structure changes" in Phase 1 review.
+        // In Phase 2, can mentor add chapters? "Mentor can now start building internal lesson content."
+        // Usually, curriculum is fixed after approval. Let's strictly follow "No structure changes" rule implying structure is set.
+        // If they need to change structure, they probably need to revert or request stricture change.
+        // For now, restrict to DRAFT/CURR_REJECTED.
+        if (!allowedStructureEditStatuses.includes(course.status)) {
+            throw new ForbiddenException('Cannot modify curriculum structure (chapters) after curriculum approval.');
         }
 
         const existingChapter = await this.chaptersRepository.findOne({
@@ -251,6 +361,7 @@ export class CoursesService {
             title: createChapterDto.title,
             orderIndex: createChapterDto.orderIndex,
             points: createChapterDto.points || 0,
+            isFreePreview: createChapterDto.isFreePreview || false,
             moduleId,
         });
 
@@ -269,8 +380,21 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
+        // Phase 2 Editing: Content
+        const allowedContentEditStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedContentEditStatuses.includes(course.status)) {
+            throw new ForbiddenException('Cannot edit content. Curriculum must be approved first, or content must be in draft/rejected state.');
+        }
+
+        // Auto-transition to CONTENT_DRAFT if currently CURRICULUM_APPROVED
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.coursesRepository.save(course);
         }
 
         const existingBlock = await this.blocksRepository.findOne({
@@ -297,14 +421,14 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
+        if ([CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
+            throw new ForbiddenException('Cannot reorder modules after curriculum approval');
         }
 
         await this.modulesRepository.manager.transaction(async (transactionalEntityManager) => {
             for (const item of items) {
                 const result = await transactionalEntityManager.update(CourseModule,
-                    { id: item.id, courseId }, // Ensure module belongs to course
+                    { id: item.id, courseId },
                     { orderIndex: item.orderIndex }
                 );
                 if (result.affected === 0) {
@@ -323,14 +447,14 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
+        if ([CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
+            throw new ForbiddenException('Cannot reorder chapters after curriculum approval');
         }
 
         await this.chaptersRepository.manager.transaction(async (transactionalEntityManager) => {
             for (const item of items) {
                 const result = await transactionalEntityManager.update(Chapter,
-                    { id: item.id, moduleId }, // Ensure chapter belongs to module
+                    { id: item.id, moduleId },
                     { orderIndex: item.orderIndex }
                 );
                 if (result.affected === 0) {
@@ -352,8 +476,20 @@ export class CoursesService {
             throw new ForbiddenException('You can only modify your own courses');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new ForbiddenException('Cannot modify course structure unless it is in draft or rejected status');
+        // Implicitly switches to CONTENT_DRAFT? Maybe not for reorder, but check permissions.
+        const allowedContentEditStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedContentEditStatuses.includes(course.status)) {
+            throw new ForbiddenException('Cannot edit content (reorder blocks). Check course status.');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.coursesRepository.save(course);
         }
 
         await this.blocksRepository.manager.transaction(async (transactionalEntityManager) => {
@@ -369,59 +505,233 @@ export class CoursesService {
         });
     }
 
-    async submitForReview(user: User, courseId: string): Promise<Course> {
+    // --- Phase 1: Curriculum Workflow ---
+
+    async submitCurriculum(user: User, courseId: string): Promise<Course> {
         const course = await this.coursesRepository.findOne({ where: { id: courseId } });
         if (!course) throw new NotFoundException('Course not found');
+        if (course.mentorId !== user.id) throw new ForbiddenException('Not your course');
 
-        if (course.mentorId !== user.id) {
-            throw new ForbiddenException('You can only submit your own courses');
+        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.CURRICULUM_REJECTED) {
+            throw new BadRequestException('Can only submit curriculum from DRAFT or CURRICULUM_REJECTED status');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('Course can only be submitted from draft or rejected status');
-        }
-
-        course.status = CourseStatus.UNDER_REVIEW;
+        course.status = CourseStatus.CURRICULUM_UNDER_REVIEW;
         course.submittedAt = new Date();
         return await this.coursesRepository.save(course);
     }
 
-    async approveCourse(user: User, courseId: string): Promise<Course> {
-        if (user.role !== Role.ADMIN) {
-            throw new ForbiddenException('Only admins can approve courses');
-        }
+    async approveCurriculum(user: User, courseId: string): Promise<Course> {
+        if (user.role !== Role.ADMIN) throw new ForbiddenException('Admin only'); // Should use Guard, but double check
 
         const course = await this.coursesRepository.findOne({ where: { id: courseId } });
         if (!course) throw new NotFoundException('Course not found');
 
-        if (course.status !== CourseStatus.UNDER_REVIEW) {
-            throw new BadRequestException('Course is not under review');
+        if (course.status !== CourseStatus.CURRICULUM_UNDER_REVIEW) {
+            throw new BadRequestException('Course curriculum is not under review');
+        }
+
+        course.status = CourseStatus.CURRICULUM_APPROVED;
+        // Reset rejection reason if any
+        course.rejectReason = null;
+        return await this.coursesRepository.save(course);
+    }
+
+    async rejectCurriculum(user: User, courseId: string, reason: string): Promise<Course> {
+        if (user.role !== Role.ADMIN) throw new ForbiddenException('Admin only');
+
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+
+        if (course.status !== CourseStatus.CURRICULUM_UNDER_REVIEW) {
+            throw new BadRequestException('Course curriculum is not under review');
+        }
+
+        course.status = CourseStatus.CURRICULUM_REJECTED;
+        course.rejectReason = reason;
+        return await this.coursesRepository.save(course);
+    }
+
+    // --- Phase 2: Content Workflow ---
+
+    async submitContent(user: User, courseId: string): Promise<Course> {
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+        if (course.mentorId !== user.id) throw new ForbiddenException('Not your course');
+
+        // Can submit if Approved (no content added yet technically but possible) or Content Draft or Content Rejected
+        const allowedStatuses = [CourseStatus.CURRICULUM_APPROVED, CourseStatus.CONTENT_DRAFT, CourseStatus.CONTENT_REJECTED];
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot submit content. Curriculum must be approved first.');
+        }
+
+        course.status = CourseStatus.CONTENT_UNDER_REVIEW;
+        // Maybe update submittedAt?
+        course.submittedAt = new Date();
+        return await this.coursesRepository.save(course);
+    }
+
+    async approveContent(user: User, courseId: string): Promise<Course> {
+        if (user.role !== Role.ADMIN) throw new ForbiddenException('Admin only');
+
+        const course = await this.coursesRepository.findOne({ where: { id: courseId } });
+        if (!course) throw new NotFoundException('Course not found');
+
+        if (course.status !== CourseStatus.CONTENT_UNDER_REVIEW) {
+            throw new BadRequestException('Course content is not under review');
         }
 
         course.status = CourseStatus.PUBLISHED;
         course.publishedAt = new Date();
         course.publishedBy = user;
-        course.visibility = CourseVisibility.PUBLIC; // Make it visible
+        course.visibility = CourseVisibility.PUBLIC;
+        course.rejectReason = null;
 
         return await this.coursesRepository.save(course);
     }
 
-    async rejectCourse(user: User, courseId: string, reason: string): Promise<Course> {
-        if (user.role !== Role.ADMIN) {
-            throw new ForbiddenException('Only admins can reject courses');
-        }
+    async rejectContent(user: User, courseId: string, reason: string): Promise<Course> {
+        if (user.role !== Role.ADMIN) throw new ForbiddenException('Admin only');
 
         const course = await this.coursesRepository.findOne({ where: { id: courseId } });
         if (!course) throw new NotFoundException('Course not found');
 
-        if (course.status !== CourseStatus.UNDER_REVIEW) {
-            throw new BadRequestException('Course is not under review');
+        if (course.status !== CourseStatus.CONTENT_UNDER_REVIEW) {
+            throw new BadRequestException('Course content is not under review');
         }
 
-        course.status = CourseStatus.REJECTED;
+        course.status = CourseStatus.CONTENT_REJECTED;
         course.rejectReason = reason;
-
         return await this.coursesRepository.save(course);
+    }
+
+    // Kept for signature compatibility if used elsewhere, but internally we use toggleChapterFreeStatus
+    async toggleChapterFreeStatus(user: User, chapterId: string, isFreePreview: boolean): Promise<Chapter> {
+        const chapter = await this.chaptersRepository.findOne({
+            where: { id: chapterId },
+            relations: ['module', 'module.course']
+        });
+        if (!chapter) throw new NotFoundException('Chapter not found');
+
+        const course = chapter.module.course;
+        if (course.mentorId !== user.id) {
+            throw new ForbiddenException('You can only modify your own courses');
+        }
+
+        // This is a flag change, effectively "structure" or "meta". 
+        // Allowed in DRAFT/CURR_REJECTED. 
+        // Should it be allowed later? "Free preview flags" are listed in Phase 1. 
+        // Let's restrict to Phase 1 for now to force curriculum correctness.
+        if ([CourseStatus.DRAFT, CourseStatus.CURRICULUM_REJECTED].indexOf(course.status) === -1) {
+            // Maybe allow admin to toggle later? Or mentor in next version?
+            // For now adhere to Phase 1.
+            throw new ForbiddenException('Cannot change free preview flags after curriculum approval');
+        }
+
+        chapter.isFreePreview = isFreePreview;
+        return await this.chaptersRepository.save(chapter);
+    }
+
+    // Deprecated methods replaced by specific workflow methods above
+    // keeping skeletons if needed or just remove? I'll remove them.
+
+    async completeChapter(user: User, courseId: string, chapterId: string): Promise<any> {
+        // Find course and check ownership? Or just enrollment?
+        // Enrollment matters.
+        const enrollment = await this.enrollmentsRepository.findOne({ where: { userId: user.id, courseId } });
+        if (!enrollment) {
+            throw new ForbiddenException('You must be enrolled in this course');
+        }
+
+        // Find chapter
+        const chapter = await this.chaptersRepository.findOne({
+            where: { id: chapterId },
+            relations: ['module']
+        });
+        if (!chapter) throw new NotFoundException('Chapter not found');
+        if (chapter.module.courseId !== courseId) throw new BadRequestException('Chapter does not belong to this course');
+
+        // Find or create progress
+        let progress = await this.progressRepository.findOne({ where: { userId: user.id, courseId } });
+        if (!progress) {
+            progress = this.progressRepository.create({
+                userId: user.id,
+                courseId,
+                completedChapterIds: [],
+                completedLessonsCount: 0,
+                totalPoints: 0
+            });
+        }
+
+        // Check if already completed
+        if (!progress.completedChapterIds) progress.completedChapterIds = [];
+        if (!progress.completedChapterIds.includes(chapterId)) {
+            progress.completedChapterIds.push(chapterId);
+            progress.completedLessonsCount += 1;
+            progress.totalPoints += chapter.points || 0; // Assuming chapter has points logic
+
+            // Logic to find next chapter
+            // Current chapter order
+            const currentOrder = chapter.orderIndex;
+            const currentModuleId = chapter.moduleId;
+
+            // Find next chapter in same module
+            let nextChapter = await this.chaptersRepository.findOne({
+                where: {
+                    moduleId: currentModuleId,
+                    orderIndex: currentOrder + 1
+                }
+            });
+
+            if (!nextChapter) {
+                // Find next module
+                const currentModule = await this.modulesRepository.findOne({ where: { id: currentModuleId } });
+                const nextModule = await this.modulesRepository.findOne({
+                    where: {
+                        courseId,
+                        orderIndex: (currentModule?.orderIndex || 0) + 1
+                    }
+                });
+
+                if (nextModule) {
+                    // First chapter of next module
+                    nextChapter = await this.chaptersRepository.findOne({
+                        where: { moduleId: nextModule.id, orderIndex: 0 }
+                    });
+                    // If no order index 0? Check lowest
+                    if (!nextChapter) {
+                        // Or just first one
+                        const firstChapter = await this.chaptersRepository.findOne({
+                            where: { moduleId: nextModule.id },
+                            order: { orderIndex: 'ASC' }
+                        });
+                        nextChapter = firstChapter || null;
+                    }
+                }
+            }
+
+            if (nextChapter) {
+                progress.currentChapterId = nextChapter.id;
+            }
+
+            await this.progressRepository.save(progress);
+        }
+
+        return {
+            completed: true,
+            progress: {
+                percentage: Math.min(100, Math.round((progress.completedLessonsCount / (await this.getCourseTotalChapters(courseId) || 1)) * 100)),
+                currentChapterId: progress.currentChapterId,
+                completedChapterIds: progress.completedChapterIds
+            }
+        };
+    }
+
+    private async getCourseTotalChapters(courseId: string): Promise<number> {
+        return await this.chaptersRepository.count({
+            where: { module: { courseId } },
+            relations: ['module']
+        });
     }
 
     async getUploadUrl(filename: string, contentType: string) {
@@ -447,6 +757,7 @@ export class CoursesService {
             publicId
         };
     }
+
 
     private async generateSlug(title: string): Promise<string> {
         let slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');

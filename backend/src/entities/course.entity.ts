@@ -17,9 +17,13 @@ export enum CourseAccessType {
 
 export enum CourseStatus {
     DRAFT = 'draft',
-    UNDER_REVIEW = 'under_review',
+    CURRICULUM_UNDER_REVIEW = 'curriculum_under_review',
+    CURRICULUM_REJECTED = 'curriculum_rejected',
+    CURRICULUM_APPROVED = 'curriculum_approved',
+    CONTENT_DRAFT = 'content_draft',
+    CONTENT_UNDER_REVIEW = 'content_under_review',
+    CONTENT_REJECTED = 'content_rejected',
     PUBLISHED = 'published',
-    REJECTED = 'rejected',
     ARCHIVED = 'archived',
 }
 
@@ -108,7 +112,7 @@ export class Course {
     publishedBy: User;
 
     @Column({ type: 'text', nullable: true })
-    rejectReason: string;
+    rejectReason: string | null;
 
     @OneToMany(() => Module, (module) => module.course)
     modules: Module[];

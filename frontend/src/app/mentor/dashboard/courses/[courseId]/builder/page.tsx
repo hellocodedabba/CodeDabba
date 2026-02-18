@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { NavBar } from "@/components/landing/NavBar";
 import api from "@/lib/axios";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Loader2, Save, ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Save, ChevronDown, ChevronRight, FileText, Eye, Lock, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import toast from 'react-hot-toast';
@@ -15,6 +15,7 @@ interface Chapter {
     title: string;
     content: string;
     orderIndex: number;
+    isFreePreview: boolean;
 }
 
 interface Module {
@@ -28,7 +29,7 @@ interface Course {
     id: string;
     title: string;
     modules: Module[];
-    status: 'draft' | 'under_review' | 'published' | 'rejected' | 'archived';
+    status: 'draft' | 'curriculum_under_review' | 'curriculum_rejected' | 'curriculum_approved' | 'content_draft' | 'content_under_review' | 'content_rejected' | 'published' | 'archived';
     rejectReason?: string;
 }
 
@@ -65,6 +66,10 @@ export default function CourseBuilderPage() {
         }
     };
 
+    const isPhase1Editable = course?.status === 'draft' || course?.status === 'curriculum_rejected';
+    const isPhase2Editable = course?.status === 'curriculum_approved' || course?.status === 'content_draft' || course?.status === 'content_rejected';
+    const isLocked = course?.status === 'curriculum_under_review' || course?.status === 'content_under_review' || course?.status === 'published';
+
     const handleAddModule = async () => {
         if (!newModuleTitle.trim()) return;
         try {
@@ -82,6 +87,7 @@ export default function CourseBuilderPage() {
             setExpandedModules(prev => [...prev, data.id]);
         } catch (error) {
             console.error("Failed to add module", error);
+            toast.error("Failed to add module");
         }
     };
 
@@ -128,9 +134,16 @@ export default function CourseBuilderPage() {
     };
 
     const handleSubmitForReview = async () => {
+        if (!course) return;
+
         try {
-            await api.post(`/courses/${courseId}/submit`);
-            toast.success("Course submitted for review");
+            if (isPhase1Editable) {
+                await api.post(`/courses/${courseId}/submit-curriculum`);
+                toast.success("Curriculum submitted for review");
+            } else if (isPhase2Editable) {
+                await api.post(`/courses/${courseId}/submit-content`);
+                toast.success("Content submitted for review");
+            }
             fetchCourse();
         } catch (error) {
             console.error("Failed to submit course", error);
@@ -138,10 +151,67 @@ export default function CourseBuilderPage() {
         }
     };
 
+    const handleChapterClick = (chapterId: string) => {
+        if (isPhase1Editable) {
+            toast('Finish curriculum review first before adding content.', { icon: '🔒' });
+            return;
+        }
+        router.push(`/mentor/dashboard/courses/${courseId}/chapters/${chapterId}/edit`);
+    };
+
     const toggleModule = (moduleId: string) => {
         setExpandedModules(prev =>
             prev.includes(moduleId) ? prev.filter(id => id !== moduleId) : [...prev, moduleId]
         );
+    };
+
+    const toggleChapterFree = async (chapterId: string, currentStatus: boolean, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent navigation
+
+        // Allowed in Phase 1 only? Or anytime? Backend restricts to Phase 1.
+        if (!isPhase1Editable) {
+            toast.error("Cannot change structure settings after curriculum approval");
+            return;
+        }
+
+        try {
+            await api.patch(`/courses/chapters/${chapterId}/free`, {
+                isFreePreview: !currentStatus
+            });
+
+            // Optimistic update
+            setCourse(prev => {
+                if (!prev) return null;
+                const newModules = prev.modules.map(m => ({
+                    ...m,
+                    chapters: m.chapters.map(c =>
+                        c.id === chapterId ? { ...c, isFreePreview: !currentStatus } : c
+                    )
+                }));
+                return { ...prev, modules: newModules };
+            });
+            toast.success(currentStatus ? "Chapter locked" : "Free preview enabled");
+        } catch (error) {
+            console.error("Failed to toggle free status", error);
+            toast.error("Failed to update status");
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'published': return '#22c55e';
+            case 'curriculum_rejected':
+            case 'content_rejected': return '#ef4444';
+            case 'curriculum_under_review':
+            case 'content_under_review': return '#eab308';
+            case 'curriculum_approved': return '#3b82f6';
+            default: return '#71717a';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        // Pretty print
+        return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
 
     if (loading) {
@@ -166,43 +236,47 @@ export default function CourseBuilderPage() {
                             </Link>
                             <div>
                                 <h1 className="text-2xl font-bold text-white">{course.title}</h1>
-                                <p className="text-zinc-400 text-sm">Course Builder</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-zinc-400 text-sm">Course Builder</p>
+                                    <span className="text-zinc-600">•</span>
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded border" style={{ borderColor: getStatusColor(course.status), color: getStatusColor(course.status) }}>
+                                        {getStatusText(course.status)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <div className="flex gap-3">
-                            <div className="px-3 py-1 rounded-full text-xs font-medium border uppercase tracking-wider h-fit self-center"
-                                style={{
-                                    borderColor:
-                                        course.status === 'published' ? '#22c55e' :
-                                            course.status === 'rejected' ? '#ef4444' :
-                                                course.status === 'under_review' ? '#eab308' :
-                                                    '#71717a',
-                                    color:
-                                        course.status === 'published' ? '#22c55e' :
-                                            course.status === 'rejected' ? '#ef4444' :
-                                                course.status === 'under_review' ? '#eab308' :
-                                                    '#a1a1aa'
-                                }}
-                            >
-                                {course.status.replace('_', ' ')}
-                            </div>
-
-                            {course.status === 'draft' || course.status === 'rejected' ? (
+                            {(isPhase1Editable || isPhase2Editable) && (
                                 <button
                                     onClick={handleSubmitForReview}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition-colors font-medium shadow-lg shadow-green-900/20"
                                 >
                                     <Save className="w-4 h-4" />
-                                    Submit for Review
+                                    {isPhase1Editable ? "Submit Curriculum" : "Submit Content"}
                                 </button>
-                            ) : null}
+                            )}
                         </div>
                     </div>
 
-                    {course.status === 'rejected' && course.rejectReason && (
-                        <div className="mb-8 p-4 bg-red-950/20 border border-red-900/50 rounded-xl text-red-200">
-                            <h3 className="font-semibold mb-1 text-red-400">Submission Rejected</h3>
-                            <p>{course.rejectReason}</p>
+                    {(course.rejectReason) && (course.status === 'curriculum_rejected' || course.status === 'content_rejected') && (
+                        <div className="mb-8 p-4 bg-red-950/20 border border-red-900/50 rounded-xl text-red-200 flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                            <div>
+                                <h3 className="font-semibold mb-1 text-red-400">Submission Rejected</h3>
+                                <p>{course.rejectReason}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {course.status === 'curriculum_approved' && (
+                        <div className="mb-8 p-6 bg-blue-950/20 border border-blue-900/30 rounded-xl text-blue-100 flex items-center gap-4">
+                            <div className="p-3 bg-blue-500/10 rounded-full">
+                                <CheckCircle className="w-6 h-6 text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-lg text-blue-300">Curriculum Approved!</h3>
+                                <p className="text-blue-200/70">You can now start adding content to your lessons. Click on any chapter below to open the content editor.</p>
+                            </div>
                         </div>
                     )}
 
@@ -231,14 +305,33 @@ export default function CourseBuilderPage() {
                                             {module.chapters.map((chapter) => (
                                                 <div
                                                     key={chapter.id}
-                                                    onClick={() => router.push(`/mentor/dashboard/courses/${courseId}/chapters/${chapter.id}/edit`)}
-                                                    className="flex items-center gap-3 p-3 bg-zinc-950/50 rounded-lg border border-zinc-800 hover:border-violet-500/30 cursor-pointer group"
+                                                    onClick={() => handleChapterClick(chapter.id)}
+                                                    className={`flex items-center justify-between p-3 bg-zinc-950/50 rounded-lg border border-zinc-800 group transition-all ${isPhase1Editable
+                                                            ? 'opacity-75 hover:opacity-100 cursor-not-allowed'
+                                                            : 'hover:border-violet-500/30 cursor-pointer'
+                                                        }`}
                                                 >
-                                                    <FileText className="w-4 h-4 text-zinc-500 group-hover:text-violet-400" />
-                                                    <span className="text-sm text-zinc-300 group-hover:text-white">{chapter.title}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <FileText className={`w-4 h-4 ${isPhase1Editable ? 'text-zinc-600' : 'text-zinc-500 group-hover:text-violet-400'}`} />
+                                                        <span className={`text-sm ${isPhase1Editable ? 'text-zinc-400' : 'text-zinc-300 group-hover:text-white'}`}>{chapter.title}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center">
+                                                        <button
+                                                            onClick={(e) => toggleChapterFree(chapter.id, chapter.isFreePreview, e)}
+                                                            disabled={!isPhase1Editable}
+                                                            className={`p-1.5 rounded-md transition-all ${chapter.isFreePreview
+                                                                ? 'bg-green-500/10 text-green-400'
+                                                                : 'bg-zinc-800 text-zinc-500'
+                                                                } ${isPhase1Editable ? 'hover:bg-zinc-700' : 'opacity-50 cursor-not-allowed'}`}
+                                                            title={chapter.isFreePreview ? "Free Preview" : "Locked"}
+                                                        >
+                                                            {chapter.isFreePreview ? <Eye className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
-                                            {(course.status === 'draft' || course.status === 'rejected') && (
+                                            {isPhase1Editable && (
                                                 <button
                                                     onClick={() => handleAddChapterClick(module.id)}
                                                     className="w-full py-2 text-sm text-zinc-500 hover:text-violet-400 border border-dashed border-zinc-800 hover:border-violet-500/30 rounded-lg flex items-center justify-center gap-2 transition-all"
@@ -252,7 +345,7 @@ export default function CourseBuilderPage() {
                                 </div>
                             ))}
 
-                            {(course.status === 'draft' || course.status === 'rejected') && (
+                            {isPhase1Editable && (
                                 addingModule ? (
                                     <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
                                         <input
@@ -301,6 +394,16 @@ export default function CourseBuilderPage() {
                                     <div className="flex justify-between text-sm">
                                         <span className="text-zinc-400">Total Chapters</span>
                                         <span className="text-white">{course.modules.reduce((acc, m) => acc + m.chapters.length, 0)}</span>
+                                    </div>
+                                    <div className="pt-4 border-t border-zinc-800">
+                                        <div className="flex justify-between text-sm mb-2">
+                                            <span className="text-zinc-400">Current Phase</span>
+                                            <span className="text-white font-medium">
+                                                {isPhase1Editable ? "Phase 1: Structure" :
+                                                    isPhase2Editable ? "Phase 2: Content" :
+                                                        "Locked / Published"}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -28,6 +28,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { Task } from './entities/task.entity';
 import { TaskOption } from './entities/task-option.entity';
 import { TestCase } from './entities/test-case.entity';
+import { Progress } from './entities/progress.entity';
 
 @Module({
   imports: [
@@ -50,7 +51,7 @@ import { TestCase } from './entities/test-case.entity';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
-          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, Otp, File, LessonBlock, Task, TaskOption, TestCase],
+          entities: [User, StudentProfile, MentorProfile, Course, CourseModule, Chapter, Submission, Enrollment, RefreshToken, MentorApplication, Otp, File, LessonBlock, Task, TaskOption, TestCase, Progress],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {
             rejectUnauthorized: false,

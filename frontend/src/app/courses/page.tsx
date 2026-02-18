@@ -186,17 +186,17 @@ function CoursesContent() {
 
                                 <div className="mt-6">
                                     {course.isEnrolled ? (
-                                        <button className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-medium transition-colors">
+                                        <div className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-medium transition-colors text-center">
                                             Continue Learning
-                                        </button>
+                                        </div>
                                     ) : course.accessType === 'free' ? (
-                                        <button className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors">
+                                        <div className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors text-center">
                                             Start Learning
-                                        </button>
+                                        </div>
                                     ) : (
-                                        <button className="w-full py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                                        <div className="w-full py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 text-center">
                                             Enroll • ${course.price}
-                                        </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>

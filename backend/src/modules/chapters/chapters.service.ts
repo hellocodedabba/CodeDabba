@@ -42,8 +42,19 @@ export class ChaptersService {
             throw new ForbiddenException('You are not authorized to modify this course');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('You can only modify courses in DRAFT or REJECTED status');
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot add blocks. Curriculum must be approved first or content in draft/rejected.');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         const lastBlock = await this.lessonBlockRepository.findOne({
@@ -76,6 +87,21 @@ export class ChaptersService {
 
         if (course.mentorId !== userId) {
             throw new ForbiddenException('You are not authorized to modify this course');
+        }
+
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot reorder blocks in current status');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         // Use a transaction to ensure all updates succeed or fail together
@@ -115,6 +141,21 @@ export class ChaptersService {
 
         if (course.mentorId !== userId) {
             throw new ForbiddenException('Not authorized');
+        }
+
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot delete blocks in current status');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         // Soft delete
@@ -187,8 +228,19 @@ export class ChaptersService {
             throw new ForbiddenException('Not authorized');
         }
 
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('You can only modify courses in DRAFT or REJECTED status');
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot update blocks in current status');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         block.content = updateData.content;

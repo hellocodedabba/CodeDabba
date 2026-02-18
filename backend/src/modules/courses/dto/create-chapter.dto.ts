@@ -1,4 +1,4 @@
-import { IsString, IsInt, MinLength, Min, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsInt, MinLength, Min, IsOptional, IsUrl, IsBoolean } from 'class-validator';
 
 export class CreateChapterDto {
     @IsString()
@@ -21,4 +21,8 @@ export class CreateChapterDto {
     @IsInt()
     @Min(0)
     points?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    isFreePreview?: boolean;
 }

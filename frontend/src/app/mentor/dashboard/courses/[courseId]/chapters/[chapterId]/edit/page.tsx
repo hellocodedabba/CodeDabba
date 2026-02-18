@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Plus, Type, Video, Image as ImageIcon, FileText, Trash2, GripVertical, Loader2, Edit3, Eye, X } from "lucide-react";
+import { ArrowLeft, Save, Plus, Type, Video, Image as ImageIcon, FileText, Trash2, GripVertical, Loader2, Edit3, Eye, X, AlertCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/axios";
 import { Reorder } from "framer-motion";
@@ -27,6 +27,13 @@ interface Chapter {
     title: string;
     blocks: LessonBlock[];
     tasks: Task[];
+    module?: {
+        course?: {
+            id: string;
+            status: string;
+            mentorId: string;
+        }
+    }
 }
 
 export default function ChapterEditPage() {
@@ -57,21 +64,28 @@ export default function ChapterEditPage() {
 
     const fetchChapter = async () => {
         try {
-
-
             const { data } = await api.get(`/chapters/${chapterId}`);
             setChapter(data);
             setBlocks(data.blocks || []);
             setTasks(data.tasks || []);
         } catch (error) {
             console.error("Failed to fetch chapter", error);
-            // Fallback: try fetching course and finding chapter? No, need blocks.
         } finally {
             setLoading(false);
         }
     };
 
+    const courseStatus = chapter?.module?.course?.status;
+    const isEditable =
+        courseStatus === 'curriculum_approved' ||
+        courseStatus === 'content_draft' ||
+        courseStatus === 'content_rejected';
+
+    // If we are in Phase 1 (Draft/Curriculum Rejected), editing content is NOT allowed.
+    // If we are in Review/Published, editing content is NOT allowed.
+
     const handleReorder = async (newOrder: LessonBlock[]) => {
+        if (!isEditable) return;
         setBlocks(newOrder); // Optimistic update
 
         // Prepare payload: [{ id, order_index }]
@@ -89,6 +103,7 @@ export default function ChapterEditPage() {
     };
 
     const handleAddBlock = async (type: "video" | "text" | "image" | "file", content: string) => {
+        if (!isEditable) return;
         try {
             setSaving(true);
             const { data } = await api.post(`/chapters/${chapterId}/blocks`, {
@@ -110,6 +125,7 @@ export default function ChapterEditPage() {
     };
 
     const handleDeleteBlock = async (blockId: string) => {
+        if (!isEditable) return;
         if (!confirm("Are you sure you want to delete this block?")) return;
         try {
             await api.delete(`/chapters/${chapterId}/blocks/${blockId}`);
@@ -144,6 +160,7 @@ export default function ChapterEditPage() {
     }
 
     const handleUpload = async (file: File, type: "video" | "image" | "file") => {
+        if (!isEditable) return;
         try {
             setSaving(true);
             const url = await uploadFile(file, type);
@@ -159,21 +176,12 @@ export default function ChapterEditPage() {
     };
 
     const handleSaveBlockContent = async (blockId: string, newContent: string) => {
+        if (!isEditable) return;
         try {
             // Optimistic update
             setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, content: newContent } : b));
             setActiveTextEditor(null);
 
-            // API call - assuming we have a PATCH endpoint for block content
-            // If not, we might need to delete and recreate or add a dedicated endpoint?
-            // "CourseService" has `reorderBlocks` but no `updateBlock`.
-            // I should double check if I have update block endpoint. 
-            // In "Step 46" view_file of courses.service.ts, I see `createBlock`, `reorderBlocks`.
-            // I DO NOT SEE `updateBlock`.
-            // I need to add `updateBlock` to backend or use a workaround.
-            // For now, I will assume I can add it or it exists. 
-            // Wait, I am the one writing the backend too. I should add it.
-            // But let's write the frontend call first.
             await api.patch(`/chapters/${chapterId}/blocks/${blockId}`, { content: newContent });
         } catch (error) {
             console.error("Failed to update block", error);
@@ -191,6 +199,7 @@ export default function ChapterEditPage() {
     // --- Task Handlers ---
 
     const handleReorderTasks = async (newOrder: Task[]) => {
+        if (!isEditable) return;
         setTasks(newOrder);
         const payload = newOrder.map((t, i) => ({ id: t.id!, order_index: i + 1 }));
         try {
@@ -202,6 +211,7 @@ export default function ChapterEditPage() {
     };
 
     const handleSaveTask = async (task: Task) => {
+        if (!isEditable) return;
         try {
             if (task.id) {
                 // Update
@@ -221,6 +231,7 @@ export default function ChapterEditPage() {
     };
 
     const handleDeleteTask = async (taskId: string) => {
+        if (!isEditable) return;
         if (!confirm("Delete this task?")) return;
         try {
             await api.delete(`/chapters/${chapterId}/tasks/${taskId}`);
@@ -237,6 +248,9 @@ export default function ChapterEditPage() {
             </div>
         );
     }
+
+    // Force Preview Mode if not editable
+    const isActuallyPreviewMode = isPreviewMode || !isEditable;
 
     return (
         <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
@@ -255,26 +269,46 @@ export default function ChapterEditPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => setIsPreviewMode(!isPreviewMode)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isPreviewMode ? 'bg-violet-600 text-white hover:bg-violet-700' : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'}`}
-                        >
-                            {isPreviewMode ? (
-                                <>
-                                    <Edit3 className="w-4 h-4" />
-                                    Back to Edit
-                                </>
-                            ) : (
-                                <>
-                                    <Eye className="w-4 h-4" />
-                                    Preview Lesson
-                                </>
-                            )}
-                        </button>
+                        {isEditable && (
+                            <button
+                                onClick={() => setIsPreviewMode(!isPreviewMode)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isPreviewMode ? 'bg-violet-600 text-white hover:bg-violet-700' : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'}`}
+                            >
+                                {isPreviewMode ? (
+                                    <>
+                                        <Edit3 className="w-4 h-4" />
+                                        Back to Edit
+                                    </>
+                                ) : (
+                                    <>
+                                        <Eye className="w-4 h-4" />
+                                        Preview Lesson
+                                    </>
+                                )}
+                            </button>
+                        )}
+                        {!isEditable && (
+                            <div className="px-3 py-1 bg-zinc-800 border border-zinc-700 rounded-lg text-xs font-medium text-zinc-400 flex items-center gap-2">
+                                <Lock className="w-3 h-3" />
+                                Read Only
+                            </div>
+                        )}
                     </div>
 
+                    {!isEditable && (
+                        <div className="mb-6 p-4 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 text-sm flex items-center gap-3">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <p>
+                                {courseStatus === 'draft' || courseStatus === 'curriculum_rejected'
+                                    ? "Content editing is locked in Phase 1. Submit curriculum for approval first."
+                                    : "Content editing is locked while under review or published."
+                                }
+                            </p>
+                        </div>
+                    )}
+
                     {
-                        isPreviewMode ? (
+                        isActuallyPreviewMode ? (
                             <div className="space-y-8 max-w-3xl mx-auto" >
                                 {
                                     blocks.map((block) => (

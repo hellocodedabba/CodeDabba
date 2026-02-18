@@ -11,8 +11,9 @@ interface Course {
     id: string;
     title: string;
     description: string;
-    isPublished: boolean;
+    status: 'draft' | 'under_review' | 'published' | 'rejected' | 'archived';
     createdAt: string;
+    rejectReason?: string;
 }
 
 export default function MentorCoursesPage() {
@@ -34,21 +35,40 @@ export default function MentorCoursesPage() {
         }
     };
 
+    const getStatusBadge = (status: string, reason?: string) => {
+        switch (status) {
+            case 'published':
+                return <span className="px-2 py-1 rounded-md text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">Live</span>;
+            case 'under_review':
+                return <span className="px-2 py-1 rounded-md text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Under Review</span>;
+            case 'rejected':
+                return (
+                    <div className="flex flex-col gap-1">
+                        <span className="px-2 py-1 rounded-md text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 w-fit">Rejected</span>
+                        {reason && <span className="text-[10px] text-red-400 max-w-[150px] truncate" title={reason}>{reason}</span>}
+                    </div>
+                );
+            case 'draft':
+            default:
+                return <span className="px-2 py-1 rounded-md text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Draft</span>;
+        }
+    };
+
     return (
         <ProtectedRoute allowedRoles={['MENTOR', 'ADMIN']}>
             <div className="min-h-screen bg-black text-white">
                 <NavBar />
                 <div className="container mx-auto px-6 py-24">
-                    <div className="flex justify-between items-center mb-8">
+                    <div className="flex justify-between items-center mb-12">
                         <div>
-                            <h1 className="text-3xl font-bold text-violet-500">My Courses</h1>
-                            <p className="text-zinc-400">Manage your valuable content.</p>
+                            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-400 mb-2">My Courses</h1>
+                            <p className="text-zinc-400">Manage and create your educational content.</p>
                         </div>
                         <Link
                             href="/mentor/dashboard/courses/create"
-                            className="inline-flex items-center px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors gap-2"
+                            className="inline-flex items-center px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-violet-900/20"
                         >
-                            <Plus className="w-5 h-5" />
+                            <Plus className="w-5 h-5 mr-2" />
                             Create Course
                         </Link>
                     </div>
@@ -58,35 +78,39 @@ export default function MentorCoursesPage() {
                             <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
                         </div>
                     ) : courses.length === 0 ? (
-                        <div className="text-center py-12 border border-dashed border-zinc-800 rounded-xl">
-                            <BookOpen className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                            <h3 className="text-xl font-medium text-white mb-2">No courses yet</h3>
-                            <p className="text-zinc-400 mb-6">Start sharing your knowledge by creating your first course.</p>
+                        <div className="text-center py-24 bg-zinc-900/30 border border-zinc-800 rounded-3xl border-dashed">
+                            <BookOpen className="w-16 h-16 text-zinc-700 mx-auto mb-6" />
+                            <h3 className="text-xl font-bold text-white mb-2">No courses yet</h3>
+                            <p className="text-zinc-400 mb-8 max-w-md mx-auto">Start sharing your knowledge by creating your first course.</p>
                             <Link
                                 href="/mentor/dashboard/courses/create"
-                                className="inline-flex items-center px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                                className="inline-flex items-center px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all"
                             >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Create Course
                             </Link>
                         </div>
                     ) : (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {courses.map((course) => (
                                 <Link
                                     key={course.id}
                                     href={`/mentor/dashboard/courses/${course.id}/builder`}
-                                    className="block p-6 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-violet-500/50 transition-all group"
+                                    className="flex flex-col h-full bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden hover:border-violet-500/50 transition-all group"
                                 >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className={`px-2 py-1 rounded text-xs font-medium ${course.isPublished ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                                            {course.isPublished ? 'Published' : 'Draft'}
+                                    <div className="h-48 bg-zinc-800 relative">
+                                        {/* Thumbnail placeholder if needed */}
+                                        <div className="absolute top-4 right-4">
+                                            {getStatusBadge(course.status, course.rejectReason)}
                                         </div>
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-violet-400 transition-colors">{course.title}</h3>
-                                    <p className="text-zinc-400 text-sm line-clamp-2 mb-4">{course.description}</p>
-                                    <div className="text-xs text-zinc-500">
-                                        Created: {new Date(course.createdAt).toLocaleDateString()}
+                                    <div className="p-6 flex-1 flex flex-col">
+                                        <h3 className="text-xl font-bold text-white mb-3 group-hover:text-violet-400 transition-colors line-clamp-1">{course.title}</h3>
+                                        <p className="text-zinc-400 text-sm line-clamp-2 mb-6 flex-1">{course.description}</p>
+                                        <div className="pt-4 border-t border-zinc-800/50 flex justify-between items-center text-xs text-zinc-500">
+                                            <span>Created {new Date(course.createdAt).toLocaleDateString()}</span>
+                                            {/* <span>{course.lessonsCount || 0} Lessons</span> */}
+                                        </div>
                                     </div>
                                 </Link>
                             ))}

@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Task, TaskType } from '../../entities/task.entity';
+import { Course } from '../../entities/course.entity';
 import { TaskOption } from '../../entities/task-option.entity';
 import { TestCase } from '../../entities/test-case.entity';
 import { Chapter } from '../../entities/chapter.entity';
@@ -34,8 +35,20 @@ export class TasksService {
 
         const course = chapter.module.course;
         if (course.mentorId !== userId) throw new ForbiddenException('Not authorized');
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to add tasks');
+
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot add tasks. content must be in draft/rejected state or curriculum approved.');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         const lastTask = await this.taskRepository.findOne({
@@ -72,8 +85,19 @@ export class TasksService {
         if (task.chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
         const course = task.chapter.module.course;
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to edit tasks');
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot edit tasks in current status');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         // Handle nested updates manually if needed, or rely on cascade save if structured correctly.
@@ -110,8 +134,19 @@ export class TasksService {
         if (task.chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
         const course = task.chapter.module.course;
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to remove tasks');
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot remove tasks in current status');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         await this.taskRepository.delete(id);
@@ -127,8 +162,19 @@ export class TasksService {
         if (chapter.module.course.mentorId !== userId) throw new ForbiddenException('Not authorized');
 
         const course = chapter.module.course;
-        if (course.status !== CourseStatus.DRAFT && course.status !== CourseStatus.REJECTED) {
-            throw new BadRequestException('Course must be in DRAFT or REJECTED mode to reorder tasks');
+        const allowedStatuses = [
+            CourseStatus.CURRICULUM_APPROVED,
+            CourseStatus.CONTENT_DRAFT,
+            CourseStatus.CONTENT_REJECTED
+        ];
+
+        if (!allowedStatuses.includes(course.status)) {
+            throw new BadRequestException('Cannot reorder tasks in current status');
+        }
+
+        if (course.status === CourseStatus.CURRICULUM_APPROVED) {
+            course.status = CourseStatus.CONTENT_DRAFT;
+            await this.dataSource.getRepository(Course).save(course);
         }
 
         await this.dataSource.transaction(async (manager) => {
