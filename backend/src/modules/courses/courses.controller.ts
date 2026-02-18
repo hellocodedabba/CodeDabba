@@ -158,7 +158,7 @@ export class CoursesController {
     @Post(':id/enroll')
     @UseGuards(AuthGuard)
     async enroll(@Request() req: any, @Param('id') id: string) {
-        return await this.coursesService.enroll(req.user, id);
+        return await this.coursesService.enroll(req.user.id, id);
     }
 
     @Post(':id/chapters/:chapterId/complete')
