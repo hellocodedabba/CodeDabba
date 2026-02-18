@@ -7,6 +7,7 @@ import { Chapter } from '../../entities/chapter.entity';
 import { User, Role } from '../../entities/user.entity';
 import { MentorProfile } from '../../entities/mentor-profile.entity';
 import { Enrollment } from '../../entities/enrollment.entity';
+import { EnrollmentStatus } from '../../entities/student-profile.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { CreateChapterDto } from './dto/create-chapter.dto';
@@ -139,7 +140,7 @@ export class CoursesService {
         const enrollment = this.enrollmentsRepository.create({
             userId,
             courseId,
-            status: 'active' as any // Use existing enum value if available
+            status: EnrollmentStatus.ACTIVE
         });
 
         await this.enrollmentsRepository.save(enrollment);
