@@ -7,11 +7,15 @@ import { Role } from '../../entities/user.entity';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
 
+import { MentorProfile } from '../../entities/mentor-profile.entity';
+
 @Injectable()
 export class MentorApplicationsService {
     constructor(
         @InjectRepository(MentorApplication)
         private mentorApplicationRepository: Repository<MentorApplication>,
+        @InjectRepository(MentorProfile)
+        private mentorProfileRepository: Repository<MentorProfile>,
         private usersService: UsersService,
         private readonly mailerService: MailerService,
     ) { }
@@ -79,11 +83,11 @@ export class MentorApplicationsService {
         if (user) {
             // If user exists, upgrade role to MENTOR
             if (user.role === Role.STUDENT) {
-                await this.usersService.updateRole(user.id, Role.MENTOR);
+                user = await this.usersService.updateRole(user.id, Role.MENTOR);
             }
         } else {
             // Create new user
-            await this.usersService.createUser({
+            user = await this.usersService.createUser({
                 email: application.email,
                 password: tempPassword,
                 role: Role.MENTOR,
@@ -92,6 +96,27 @@ export class MentorApplicationsService {
                 location: 'Remote', // Default
             });
         }
+
+        if (!user) {
+            throw new Error('Failed to create or update mentor user');
+        }
+
+        // --- Handle Mentor Profile ---
+        let profile = await this.mentorProfileRepository.findOne({ where: { userId: user.id } });
+        if (!profile) {
+            profile = this.mentorProfileRepository.create({
+                userId: user.id,
+                portfolio: application.portfolioUrl,
+                isVerified: true
+            });
+        } else {
+            profile.isVerified = true;
+            if (application.portfolioUrl && !profile.portfolio) {
+                profile.portfolio = application.portfolioUrl;
+            }
+        }
+        await this.mentorProfileRepository.save(profile);
+        // -----------------------------
 
         application.status = ApplicationStatus.APPROVED;
         const savedApplication = await this.mentorApplicationRepository.save(application);

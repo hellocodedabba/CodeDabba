@@ -9,6 +9,8 @@ import { HackathonMentor } from '../../entities/hackathon-mentor.entity';
 import { HackathonTeamMentorAssignment } from '../../entities/hackathon-team-mentor-assignment.entity';
 import { HackathonTeamMember } from '../../entities/hackathon-team-member.entity';
 import { HackathonSubmission } from '../../entities/hackathon-submission.entity';
+import { HackathonScore } from '../../entities/hackathon-score.entity';
+import { HackathonLeaderboard } from '../../entities/hackathon-leaderboard.entity';
 import { User } from '../../entities/user.entity';
 import { HackathonsService } from './hackathons.service';
 import { HackathonsController } from './hackathons.controller';
@@ -25,6 +27,8 @@ import { HackathonsController } from './hackathons.controller';
             HackathonTeamMentorAssignment,
             HackathonTeamMember,
             HackathonSubmission,
+            HackathonScore,
+            HackathonLeaderboard,
             User
         ])
     ],

@@ -11,7 +11,7 @@ interface Course {
     id: string;
     title: string;
     description: string;
-    status: 'draft' | 'under_review' | 'published' | 'rejected' | 'archived';
+    status: 'draft_curriculum' | 'curriculum_under_review' | 'curriculum_rejected' | 'curriculum_approved' | 'content_draft' | 'content_under_review' | 'content_rejected' | 'published' | 'archived';
     createdAt: string;
     rejectReason?: string;
 }
@@ -39,16 +39,22 @@ export default function MentorCoursesPage() {
         switch (status) {
             case 'published':
                 return <span className="px-2 py-1 rounded-md text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20">Live</span>;
-            case 'under_review':
+            case 'curriculum_under_review':
+            case 'content_under_review':
                 return <span className="px-2 py-1 rounded-md text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Under Review</span>;
-            case 'rejected':
+            case 'curriculum_rejected':
+            case 'content_rejected':
                 return (
-                    <div className="flex flex-col gap-1">
-                        <span className="px-2 py-1 rounded-md text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 w-fit">Rejected</span>
+                    <div className="flex flex-col gap-1 items-end">
+                        <span className="px-2 py-1 rounded-md text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 w-fit">Revision Needed</span>
                         {reason && <span className="text-[10px] text-red-400 max-w-[150px] truncate" title={reason}>{reason}</span>}
                     </div>
                 );
-            case 'draft':
+            case 'curriculum_approved':
+                return <span className="px-2 py-1 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Approved</span>;
+            case 'content_draft':
+                return <span className="px-2 py-1 rounded-md text-xs font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20">Content Draft</span>;
+            case 'draft_curriculum':
             default:
                 return <span className="px-2 py-1 rounded-md text-xs font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">Draft</span>;
         }

@@ -48,8 +48,8 @@ export class HackathonRound {
     @Column({ default: false })
     isElimination: boolean;
 
-    @Column({ default: 0 })
-    eliminationCount: number;
+    @Column('decimal', { precision: 5, scale: 2, default: 0, nullable: true })
+    eliminationThreshold: number;
 
     @Column('decimal', { precision: 5, scale: 2, default: 0 })
     weightagePercentage: number;

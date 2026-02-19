@@ -33,11 +33,13 @@ interface Team {
 }
 
 interface Round {
+    id: string;
     roundNumber: number;
     title: string;
     description: string;
     startDate: string;
     endDate: string;
+    status: string;
     isElimination: boolean;
     weightagePercentage: number;
     allowZip: boolean;
@@ -518,8 +520,18 @@ export default function MentorHackathonUnified() {
                                                     <div className="flex flex-wrap gap-4 items-center">
                                                         {round.allowGithub && <span className="flex items-center gap-2 px-4 py-2 bg-black/40 rounded-xl text-[10px] font-black text-zinc-400 border border-zinc-800"><Github className="w-3 h-3" /> GitHub Integration</span>}
                                                         {round.allowVideo && <span className="flex items-center gap-2 px-4 py-2 bg-black/40 rounded-xl text-[10px] font-black text-zinc-400 border border-zinc-800"><Video className="w-3 h-3" /> Pitch Media</span>}
-                                                        <div className="ml-auto px-6 py-2 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                                            <span className="text-2xl font-black italic text-emerald-500">{round.weightagePercentage}%</span>
+                                                        <div className="ml-auto flex items-center gap-4">
+                                                            {round.status === 'judging' && (
+                                                                <Link
+                                                                    href={`/mentor/dashboard/hackathons/${id}/rounds/${round.id}/judging`}
+                                                                    className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-2"
+                                                                >
+                                                                    <Trophy className="w-3 h-3" /> Execute Judging
+                                                                </Link>
+                                                            )}
+                                                            <div className="px-6 py-2 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                                                <span className="text-2xl font-black italic text-emerald-500">{round.weightagePercentage}%</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

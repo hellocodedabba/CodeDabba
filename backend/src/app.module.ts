@@ -39,6 +39,8 @@ import { HackathonMentor } from './entities/hackathon-mentor.entity';
 import { HackathonTeamMember } from './entities/hackathon-team-member.entity';
 import { HackathonTeamMentorAssignment } from './entities/hackathon-team-mentor-assignment.entity';
 import { HackathonSubmission } from './entities/hackathon-submission.entity';
+import { HackathonScore } from './entities/hackathon-score.entity';
+import { HackathonLeaderboard } from './entities/hackathon-leaderboard.entity';
 import { HackathonsModule } from './modules/hackathons/hackathons.module';
 
 @Module({
@@ -86,7 +88,8 @@ import { HackathonsModule } from './modules/hackathons/hackathons.module';
             Otp, File, LessonBlock, Task, TaskOption, TestCase, Progress,
             Hackathon, HackathonRound, HackathonRegistration,
             HackathonTeam, HackathonTeamInvitation, HackathonMentor,
-            HackathonTeamMember, HackathonTeamMentorAssignment, HackathonSubmission
+            HackathonTeamMember, HackathonTeamMentorAssignment, HackathonSubmission,
+            HackathonScore, HackathonLeaderboard
           ],
           synchronize: true, // Auto-create tables (dev only)
           ssl: {

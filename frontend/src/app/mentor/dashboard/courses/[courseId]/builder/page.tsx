@@ -29,7 +29,7 @@ interface Course {
     id: string;
     title: string;
     modules: Module[];
-    status: 'draft' | 'curriculum_under_review' | 'curriculum_rejected' | 'curriculum_approved' | 'content_draft' | 'content_under_review' | 'content_rejected' | 'published' | 'archived';
+    status: 'draft' | 'draft_curriculum' | 'curriculum_under_review' | 'curriculum_rejected' | 'curriculum_approved' | 'content_draft' | 'content_under_review' | 'content_rejected' | 'published' | 'archived';
     rejectReason?: string;
 }
 
@@ -66,7 +66,7 @@ export default function CourseBuilderPage() {
         }
     };
 
-    const isPhase1Editable = course?.status === 'draft' || course?.status === 'curriculum_rejected';
+    const isPhase1Editable = course?.status === 'draft_curriculum' || course?.status === 'curriculum_rejected';
     const isPhase2Editable = course?.status === 'curriculum_approved' || course?.status === 'content_draft' || course?.status === 'content_rejected';
     const isLocked = course?.status === 'curriculum_under_review' || course?.status === 'content_under_review' || course?.status === 'published';
 

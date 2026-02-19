@@ -16,6 +16,7 @@ interface Round {
     startDate: string;
     endDate: string;
     isElimination: boolean;
+    eliminationThreshold: number | null;
     eliminationCount: number;
     weightagePercentage: number;
     allowZip: boolean;
@@ -55,6 +56,7 @@ export default function CreateHackathonPage() {
             startDate: '',
             endDate: '',
             isElimination: false,
+            eliminationThreshold: 0,
             eliminationCount: 0,
             weightagePercentage: 20,
             allowZip: false,
@@ -73,6 +75,7 @@ export default function CreateHackathonPage() {
             startDate: '',
             endDate: '',
             isElimination: false,
+            eliminationThreshold: 0,
             eliminationCount: 0,
             weightagePercentage: 0,
             allowZip: false,
@@ -160,6 +163,7 @@ export default function CreateHackathonPage() {
                 rounds: rounds.map(r => ({
                     ...r,
                     weightagePercentage: Number(r.weightagePercentage),
+                    eliminationThreshold: r.isElimination ? Number(r.eliminationThreshold) : null,
                     eliminationCount: Number(r.eliminationCount),
                     maxFileSizeMb: Number(r.maxFileSizeMb)
                 }))
@@ -489,16 +493,30 @@ export default function CreateHackathonPage() {
                                                                     />
                                                                 </label>
                                                                 <div className="flex-1">
-                                                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Type</span>
-                                                                    <label className="flex items-center gap-2 mt-3 cursor-pointer">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={round.isElimination}
-                                                                            onChange={(e) => handleRoundChange(idx, 'isElimination', e.target.checked)}
-                                                                            className="w-5 h-5 rounded border-zinc-700 bg-zinc-900 text-red-500 focus:ring-red-500"
-                                                                        />
-                                                                        <span className="text-sm text-zinc-400">Elimination</span>
-                                                                    </label>
+                                                                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Rules</span>
+                                                                    <div className="space-y-4">
+                                                                        <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={round.isElimination}
+                                                                                onChange={(e) => handleRoundChange(idx, 'isElimination', e.target.checked)}
+                                                                                className="w-5 h-5 rounded border-zinc-700 bg-zinc-900 text-red-500 focus:ring-red-500"
+                                                                            />
+                                                                            <span className="text-sm text-zinc-400">Elimination Round</span>
+                                                                        </label>
+                                                                        {round.isElimination && (
+                                                                            <label className="block animate-in fade-in slide-in-from-top-1">
+                                                                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Min Score to Survive</span>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    value={round.eliminationThreshold || 0}
+                                                                                    onChange={(e) => handleRoundChange(idx, 'eliminationThreshold', e.target.value)}
+                                                                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-500/50"
+                                                                                    placeholder="Score 0-100"
+                                                                                />
+                                                                            </label>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>

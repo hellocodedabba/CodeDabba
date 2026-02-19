@@ -67,6 +67,9 @@ export class Hackathon {
     @Column({ default: true })
     allowTeam: boolean;
 
+    @Column({ default: false })
+    isMentorDistributed: boolean;
+
     @Column()
     createdById: string;
 

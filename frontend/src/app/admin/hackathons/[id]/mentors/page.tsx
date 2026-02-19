@@ -173,11 +173,11 @@ export default function AdminMentorAssignment() {
                                 </span>
                                 <button
                                     onClick={handleDistributeTeams}
-                                    disabled={saving || assigned.length === 0 || hackathon?.status !== 'approval_in_progress'}
+                                    disabled={saving || assigned.length === 0 || hackathon?.status !== 'approval_in_progress' || hackathon?.isMentorDistributed}
                                     className="group px-8 py-6 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-black rounded-3xl font-black uppercase text-xs tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95 flex items-center gap-4"
                                 >
                                     <Globe className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                                    {hackathon?.status === 'approval_in_progress' ? 'Execute Distribution' : 'Awaiting Finalization'}
+                                    {hackathon?.isMentorDistributed ? 'Distribution Completed' : hackathon?.status === 'approval_in_progress' ? 'Execute Distribution' : 'Awaiting Finalization'}
                                 </button>
                                 {hackathon?.status === 'registration_open' && (
                                     <button

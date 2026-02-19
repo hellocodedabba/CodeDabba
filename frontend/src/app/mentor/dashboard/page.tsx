@@ -26,7 +26,7 @@ interface Course {
     id: string;
     title: string;
     description: string;
-    status: 'draft' | 'under_review' | 'published' | 'rejected' | 'archived' | 'content_under_review';
+    status: 'draft_curriculum' | 'curriculum_under_review' | 'curriculum_rejected' | 'curriculum_approved' | 'content_draft' | 'content_under_review' | 'content_rejected' | 'published' | 'archived';
     createdAt: string;
     rejectReason?: string;
     thumbnailUrl?: string;
@@ -70,11 +70,16 @@ export default function MentorDashboard() {
         switch (status) {
             case 'published':
                 return <span className="px-3 py-1 bg-green-500/10 text-green-400 border border-green-500/20 text-[9px] font-black uppercase tracking-widest rounded-full">Live</span>;
-            case 'under_review':
+            case 'curriculum_under_review':
             case 'content_under_review':
                 return <span className="px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-black uppercase tracking-widest rounded-full">In Review</span>;
-            case 'rejected':
+            case 'curriculum_rejected':
+            case 'content_rejected':
                 return <span className="px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] font-black uppercase tracking-widest rounded-full">Revision Needed</span>;
+            case 'curriculum_approved':
+                return <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest rounded-full">Approved</span>;
+            case 'content_draft':
+                return <span className="px-3 py-1 bg-violet-500/10 text-violet-400 border border-violet-500/20 text-[9px] font-black uppercase tracking-widest rounded-full">Content Draft</span>;
             default:
                 return <span className="px-3 py-1 bg-zinc-800 text-zinc-400 border border-zinc-700 text-[9px] font-black uppercase tracking-widest rounded-full">Draft</span>;
         }

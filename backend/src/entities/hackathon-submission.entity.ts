@@ -58,6 +58,12 @@ export class HackathonSubmission {
     @Column({ nullable: true, type: 'text' })
     feedback: string;
 
+    @Column({ nullable: true, type: 'float' })
+    finalScore: number;
+
+    @Column({ default: false })
+    isScored: boolean;
+
     @Column({ nullable: true })
     evaluatedById: string;
 

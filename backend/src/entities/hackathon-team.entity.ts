@@ -60,6 +60,9 @@ export class HackathonTeam {
     @OneToMany(() => HackathonTeamMember, (member) => member.team)
     members: HackathonTeamMember[];
 
+    @Column({ nullable: true })
+    finalPosition: string;
+
     @CreateDateColumn()
     createdAt: Date;
 }

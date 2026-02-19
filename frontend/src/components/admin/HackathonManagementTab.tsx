@@ -17,6 +17,7 @@ interface Hackathon {
     maxParticipants?: number;
     maxTeamSize: number;
     bannerUrl?: string;
+    rounds: { id: string; title: string; status: string; roundNumber: number }[];
 }
 
 export default function HackathonManagement() {
@@ -139,6 +140,13 @@ export default function HackathonManagement() {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Link>
+                                        <Link
+                                            href={`/admin/hackathons/${h.id}/submissions`}
+                                            className="p-2 bg-zinc-800 hover:bg-zinc-700 hover:text-white rounded-lg transition-colors border border-zinc-700"
+                                            title="Submissions"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                        </Link>
                                     </div>
                                 </div>
 
@@ -184,19 +192,34 @@ export default function HackathonManagement() {
                                                 Review & Approve Squads
                                             </Link>
                                         )}
+
+                                        {h.rounds?.some(r => r.status === 'judging') && (
+                                            <div className="flex gap-2">
+                                                {h.rounds.filter(r => r.status === 'judging').map(r => (
+                                                    <Link
+                                                        key={r.id}
+                                                        href={`/admin/hackathons/${h.id}/judging/${r.id}`}
+                                                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-all text-[10px] font-black uppercase tracking-wider shadow-lg shadow-emerald-500/20"
+                                                    >
+                                                        Judging: {r.title}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    <Link
-                                        href={`/admin/hackathons/${h.id}/submissions`}
-                                        className="text-[10px] font-black text-pink-500 hover:text-pink-400 uppercase tracking-widest flex items-center gap-1.5"
-                                    >
-                                        Submissions <ExternalLink className="w-3 h-3" />
-                                    </Link>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Global Status</span>
+                                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{h.status.replace(/_/g, ' ')}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    ))
+                    }
+                </div >
             )}
-        </div>
+        </div >
     );
 }

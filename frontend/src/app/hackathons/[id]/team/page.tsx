@@ -44,6 +44,10 @@ interface Submission {
     videoUrl?: string;
     description?: string;
     isFinal: boolean;
+    mentorScores?: { score: number; remarks: string; mentorName: string; }[];
+    finalScore?: number;
+    feedback?: string;
+    isScored: boolean;
 }
 
 export default function TeamDashboard() {
@@ -372,6 +376,30 @@ export default function TeamDashboard() {
                                                     </a>
                                                 )}
                                             </div>
+
+                                            {/* Results Intel */}
+                                            {sub.isScored && (
+                                                <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Command Assessment</span>
+                                                        <span className="text-lg font-black italic text-emerald-500">{sub.finalScore?.toFixed(1)} / 10</span>
+                                                    </div>
+
+                                                    {sub.mentorScores && sub.mentorScores.length > 0 && (
+                                                        <div className="space-y-2">
+                                                            {sub.mentorScores.map((ms, msIdx) => (
+                                                                <div key={msIdx} className="bg-black/60 p-3 rounded-xl border border-zinc-800/50">
+                                                                    <div className="flex justify-between items-center mb-1">
+                                                                        <span className="text-[8px] font-black text-fuchsia-500 uppercase tracking-widest">{ms.mentorName}</span>
+                                                                        <span className="text-[10px] font-black italic text-zinc-400">{ms.score}</span>
+                                                                    </div>
+                                                                    <p className="text-[10px] text-zinc-500 font-medium leading-relaxed italic">"{ms.remarks}"</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                     {submissions.length === 0 && (

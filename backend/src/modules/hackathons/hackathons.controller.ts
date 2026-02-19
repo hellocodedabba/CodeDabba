@@ -233,4 +233,34 @@ export class HackathonsController {
     ) {
         return await this.hackathonsService.evaluateSubmission(req.user, id, body.score, body.feedback);
     }
+
+    @Post('submissions/:id/score')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.MENTOR, Role.ADMIN)
+    async submitScore(
+        @Request() req: any,
+        @Param('id') id: string,
+        @Body() body: { score: number, remarks: string }
+    ) {
+        return await this.hackathonsService.submitScore(req.user, id, body.score, body.remarks);
+    }
+
+    @Post('rounds/:id/finalize-scoring')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async finalizeRound(@Request() req: any, @Param('id') id: string) {
+        return await this.hackathonsService.finalizeRound(req.user, id);
+    }
+
+    @Get(':id/rounds/:roundId/judging-status')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN, Role.MENTOR)
+    async getJudgingStatus(@Param('id') id: string, @Param('roundId') roundId: string) {
+        return await this.hackathonsService.getTeamJudgingStatus(id, roundId);
+    }
+
+    @Get(':id/leaderboard')
+    async getLeaderboard(@Param('id') id: string, @Query('roundId') roundId?: string) {
+        return await this.hackathonsService.getLeaderboard(id, roundId);
+    }
 }

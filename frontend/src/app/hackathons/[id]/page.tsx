@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { LeaderboardView } from "@/components/hackathons/LeaderboardView";
 
 interface Round {
     roundNumber: number;
@@ -59,6 +60,7 @@ export default function HackathonDetailsPage() {
     const { user } = useAuth();
     const [hackathon, setHackathon] = useState<Hackathon | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'details' | 'leaderboard'>('details');
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [regType, setRegType] = useState<'individual' | 'team'>('individual');
     const [teamName, setTeamName] = useState('');
@@ -280,139 +282,162 @@ export default function HackathonDetailsPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-6 mt-20">
-                <div className="grid lg:grid-cols-3 gap-16">
-                    {/* Main Content */}
-                    <div className="lg:col-span-2 space-y-24">
-                        {/* Description */}
-                        <section>
-                            <h2 className="text-4xl font-black mb-10 italic uppercase tracking-tighter flex items-center gap-4">
-                                <span className="w-3 h-10 bg-violet-600 rounded-full" />
-                                Mission Briefing
-                            </h2>
-                            <div className="prose prose-invert prose-violet max-w-none text-zinc-300">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{hackathon.description}</ReactMarkdown>
-                            </div>
-                        </section>
+            <div className="container mx-auto px-6 mt-12">
+                <div className="flex gap-8 border-b border-zinc-900 mb-12">
+                    <button
+                        onClick={() => setActiveTab('details')}
+                        className={`pb-4 text-sm font-black uppercase tracking-[0.3em] transition-all relative ${activeTab === 'details' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'
+                            }`}
+                    >
+                        Mission Details
+                        {activeTab === 'details' && <div className="absolute bottom-0 left-0 w-full h-1 bg-violet-600 rounded-full" />}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('leaderboard')}
+                        className={`pb-4 text-sm font-black uppercase tracking-[0.3em] transition-all relative ${activeTab === 'leaderboard' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'
+                            }`}
+                    >
+                        Leaderboard
+                        {activeTab === 'leaderboard' && <div className="absolute bottom-0 left-0 w-full h-1 bg-fuchsia-600 rounded-full" />}
+                    </button>
+                </div>
 
-                        {/* Rounds */}
-                        <section>
-                            <h2 className="text-4xl font-black mb-12 italic uppercase tracking-tighter flex items-center gap-4">
-                                <span className="w-3 h-10 bg-fuchsia-600 rounded-full" />
-                                Battle Phases
-                            </h2>
-                            <div className="space-y-6">
-                                {hackathon.rounds.sort((a, b) => a.roundNumber - b.roundNumber).map((round, idx) => (
-                                    <div key={idx} className="group relative p-10 bg-zinc-900/50 border border-zinc-800 rounded-[3rem] hover:border-violet-500/30 transition-all overflow-hidden">
-                                        <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <span className="text-[12rem] font-black italic leading-none">{round.roundNumber}</span>
-                                        </div>
-                                        <div className="relative z-10">
-                                            <div className="flex justify-between items-start mb-8">
-                                                <div>
-                                                    <span className="text-[10px] font-black text-violet-500 uppercase tracking-[0.3em] mb-2 block">PHASE {round.roundNumber}</span>
-                                                    <h3 className="text-4xl font-black italic uppercase tracking-tight">{round.title}</h3>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-lg font-black italic text-zinc-300">{new Date(round.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                                                    <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest mt-1">to {new Date(round.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-zinc-400 mb-10 max-w-2xl text-lg leading-relaxed">
-                                                {round.description}
-                                            </div>
-                                            <div className="flex flex-wrap gap-4 items-center">
-                                                {round.allowZip && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><FileArchive className="w-4 h-4" /> Source Code</span>}
-                                                {round.allowGithub && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><Github className="w-4 h-4" /> GitHub Repo</span>}
-                                                {round.allowVideo && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><Video className="w-4 h-4" /> Pitch Video</span>}
-                                                {round.allowDescription && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><MessageCircle className="w-4 h-4" /> Documentation</span>}
-
-                                                <div className="ml-auto flex items-center gap-4 px-6 py-2 bg-violet-600/10 rounded-2xl border border-violet-600/20">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">Weight</span>
-                                                    <span className="text-2xl font-black italic text-violet-400">{round.weightagePercentage}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Evaluation */}
-                        {hackathon.evaluationCriteria && (
+                {activeTab === 'details' ? (
+                    <div className="grid lg:grid-cols-3 gap-16">
+                        {/* Main Content */}
+                        <div className="lg:col-span-2 space-y-24">
+                            {/* Description */}
                             <section>
                                 <h2 className="text-4xl font-black mb-10 italic uppercase tracking-tighter flex items-center gap-4">
-                                    <span className="w-3 h-10 bg-emerald-600 rounded-full" />
-                                    Judgment Protocol
+                                    <span className="w-3 h-10 bg-violet-600 rounded-full" />
+                                    Mission Briefing
                                 </h2>
-                                <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] prose prose-invert prose-emerald max-w-none text-zinc-300">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{hackathon.evaluationCriteria}</ReactMarkdown>
+                                <div className="prose prose-invert prose-violet max-w-none text-zinc-300">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{hackathon.description}</ReactMarkdown>
                                 </div>
                             </section>
-                        )}
-                    </div>
 
-                    {/* Sidebar */}
-                    <div className="space-y-12">
-                        {/* Rules */}
-                        {hackathon.rules && (
-                            <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem]">
-                                <h3 className="text-2xl font-black italic uppercase mb-8 flex items-center gap-3">
-                                    <ShieldAlert className="w-6 h-6 text-red-500" />
-                                    Battle Laws
-                                </h3>
-                                <div className="prose prose-invert prose-sm prose-red max-w-none text-zinc-400">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{hackathon.rules}</ReactMarkdown>
-                                </div>
-                            </div>
-                        )}
+                            {/* Rounds */}
+                            <section>
+                                <h2 className="text-4xl font-black mb-12 italic uppercase tracking-tighter flex items-center gap-4">
+                                    <span className="w-3 h-10 bg-fuchsia-600 rounded-full" />
+                                    Battle Phases
+                                </h2>
+                                <div className="space-y-6">
+                                    {hackathon.rounds.sort((a, b) => a.roundNumber - b.roundNumber).map((round, idx) => (
+                                        <div key={idx} className="group relative p-10 bg-zinc-900/50 border border-zinc-800 rounded-[3rem] hover:border-violet-500/30 transition-all overflow-hidden">
+                                            <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <span className="text-[12rem] font-black italic leading-none">{round.roundNumber}</span>
+                                            </div>
+                                            <div className="relative z-10">
+                                                <div className="flex justify-between items-start mb-8">
+                                                    <div>
+                                                        <span className="text-[10px] font-black text-violet-500 uppercase tracking-[0.3em] mb-2 block">PHASE {round.roundNumber}</span>
+                                                        <h3 className="text-4xl font-black italic uppercase tracking-tight">{round.title}</h3>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-lg font-black italic text-zinc-300">{new Date(round.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                                        <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest mt-1">to {new Date(round.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-zinc-400 mb-10 max-w-2xl text-lg leading-relaxed">
+                                                    {round.description}
+                                                </div>
+                                                <div className="flex flex-wrap gap-4 items-center">
+                                                    {round.allowZip && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><FileArchive className="w-4 h-4" /> Source Code</span>}
+                                                    {round.allowGithub && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><Github className="w-4 h-4" /> GitHub Repo</span>}
+                                                    {round.allowVideo && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><Video className="w-4 h-4" /> Pitch Video</span>}
+                                                    {round.allowDescription && <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-xl text-xs font-bold text-zinc-400 border border-white/5"><MessageCircle className="w-4 h-4" /> Documentation</span>}
 
-                        {/* CTA Mobile Floating or Sidebar */}
-                        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-[3rem] space-y-6 sticky top-24">
-                            <h3 className="text-xl font-bold uppercase italic text-zinc-500">Quick Stats</h3>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center py-3 border-b border-white/5 text-sm">
-                                    <span className="font-bold text-zinc-500">REGISTRATION</span>
-                                    <span className={isRegOpen ? "text-green-500 font-black italic" : "text-red-500 font-black italic"}>
-                                        {isRegOpen ? "OPEN NOW" : "CLOSED"}
-                                    </span>
+                                                    <div className="ml-auto flex items-center gap-4 px-6 py-2 bg-violet-600/10 rounded-2xl border border-violet-600/20">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">Weight</span>
+                                                        <span className="text-2xl font-black italic text-violet-400">{round.weightagePercentage}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="flex justify-between items-center py-3 border-b border-white/5 text-sm">
-                                    <span className="font-bold text-zinc-500">TEAM SIZE</span>
-                                    <span className="text-white font-black italic">1 TO {hackathon.maxTeamSize}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-3 text-sm">
-                                    <span className="font-bold text-zinc-500">START DATE</span>
-                                    <span className="text-white font-black italic">{new Date(hackathon.startDate).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                            {isRegOpen ? (
-                                <div className="space-y-4">
-                                    {hackathon.allowIndividual && (
-                                        <button
-                                            onClick={() => { setRegType('individual'); setShowRegisterModal(true); }}
-                                            className="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white font-black italic uppercase rounded-2xl transition-all shadow-xl shadow-violet-600/20"
-                                        >
-                                            Enlist Solo
-                                        </button>
-                                    )}
-                                    {hackathon.allowTeam && (
-                                        <button
-                                            onClick={() => { setRegType('team'); setShowRegisterModal(true); }}
-                                            className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-black italic uppercase rounded-2xl transition-all shadow-xl shadow-fuchsia-600/20"
-                                        >
-                                            Enlist Team
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <button disabled className="w-full py-4 bg-zinc-800 text-zinc-600 font-black italic uppercase rounded-2xl">
-                                    Registration Closed
-                                </button>
+                            </section>
+
+                            {/* Evaluation */}
+                            {hackathon.evaluationCriteria && (
+                                <section>
+                                    <h2 className="text-4xl font-black mb-10 italic uppercase tracking-tighter flex items-center gap-4">
+                                        <span className="w-3 h-10 bg-emerald-600 rounded-full" />
+                                        Judgment Protocol
+                                    </h2>
+                                    <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] prose prose-invert prose-emerald max-w-none text-zinc-300">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{hackathon.evaluationCriteria}</ReactMarkdown>
+                                    </div>
+                                </section>
                             )}
                         </div>
+
+                        {/* Sidebar */}
+                        <div className="space-y-12">
+                            {/* Rules */}
+                            {hackathon.rules && (
+                                <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem]">
+                                    <h3 className="text-2xl font-black italic uppercase mb-8 flex items-center gap-3">
+                                        <ShieldAlert className="w-6 h-6 text-red-500" />
+                                        Battle Laws
+                                    </h3>
+                                    <div className="prose prose-invert prose-sm prose-red max-w-none text-zinc-400">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{hackathon.rules}</ReactMarkdown>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CTA Mobile Floating or Sidebar */}
+                            <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-[3rem] space-y-6 sticky top-24">
+                                <h3 className="text-xl font-bold uppercase italic text-zinc-500">Quick Stats</h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center py-3 border-b border-white/5 text-sm">
+                                        <span className="font-bold text-zinc-500">REGISTRATION</span>
+                                        <span className={isRegOpen ? "text-green-500 font-black italic" : "text-red-500 font-black italic"}>
+                                            {isRegOpen ? "OPEN NOW" : "CLOSED"}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-3 border-b border-white/5 text-sm">
+                                        <span className="font-bold text-zinc-500">TEAM SIZE</span>
+                                        <span className="text-white font-black italic">1 TO {hackathon.maxTeamSize}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-3 text-sm">
+                                        <span className="font-bold text-zinc-500">START DATE</span>
+                                        <span className="text-white font-black italic">{new Date(hackathon.startDate).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                                {isRegOpen ? (
+                                    <div className="space-y-4">
+                                        {hackathon.allowIndividual && (
+                                            <button
+                                                onClick={() => { setRegType('individual'); setShowRegisterModal(true); }}
+                                                className="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white font-black italic uppercase rounded-2xl transition-all shadow-xl shadow-violet-600/20"
+                                            >
+                                                Enlist Solo
+                                            </button>
+                                        )}
+                                        {hackathon.allowTeam && (
+                                            <button
+                                                onClick={() => { setRegType('team'); setShowRegisterModal(true); }}
+                                                className="w-full py-4 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-black italic uppercase rounded-2xl transition-all shadow-xl shadow-fuchsia-600/20"
+                                            >
+                                                Enlist Team
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <button disabled className="w-full py-4 bg-zinc-800 text-zinc-600 font-black italic uppercase rounded-2xl">
+                                        Registration Closed
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <LeaderboardView hackathonId={hackathon.id} rounds={hackathon.rounds} />
+                )}
             </div>
 
             {/* Registration Modal */}
