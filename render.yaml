@@ -45,4 +45,4 @@ services:
     startCommand: cd frontend && npm run start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: "https://codedabba-backend.onrender.com"
+        value: "https://codedabba-backend.onrender.com/api/v1"
