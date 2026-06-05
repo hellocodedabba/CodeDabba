@@ -31,7 +31,8 @@ export function InvoiceModal({ paymentId, onClose }: InvoiceModalProps) {
 
     const handleDownloadPdf = () => {
         // Construct the full backend API URL pointing directly to the generated PDF Express stream
-        const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/payments/${paymentId}/invoice-pdf`;
+        const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const pdfUrl = `${baseApiUrl.replace(/\/+$/, '')}/api/v1/payments/${paymentId}/invoice-pdf`;
         
         // Open in new tab or trigger direct download
         window.open(pdfUrl, '_blank');

@@ -80,7 +80,7 @@ export default function CourseCompletionPage() {
                                 View Dashboard
                             </button>
                             <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/certificates/${certificateId}/download`}
+                                href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '')}/api/v1/certificates/${certificateId}/download`}
                                 download
                                 className="px-8 py-4 bg-amber-500 hover:bg-amber-600 text-black font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 w-full sm:w-auto"
                             >
